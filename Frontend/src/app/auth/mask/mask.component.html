@@ -1,1 +1,7 @@
-<p>mask works!</p>
+<form [formGroup]="maskForm" (ngSubmit)="onSubmit()">
+    <label for="password">Password</label>
+    <br>
+    <input type="password" id="password" formControlName="password">
+    <br>
+    <button type="submit">Login</button>
+</form>

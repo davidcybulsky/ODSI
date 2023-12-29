@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
@@ -12,13 +12,15 @@ import { Router } from '@angular/router';
   templateUrl: './login.component.html',
   styleUrl: './login.component.css'
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   
   loginForm!: FormGroup;
 
   constructor(private authService: AuthService,
               private formBuilder: FormBuilder,
               private router: Router) {
+  }
+  ngOnInit(): void {
     this.initForm()
   }
 

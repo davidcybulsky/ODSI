@@ -5,6 +5,16 @@ networks:
     driver: bridge
 
 services:
+  # web: 
+    # build:
+      # context: Frontend
+      # dockerfile: Dockerfile
+    # ports:
+      # - 4200:4200
+    # depends_on:
+      # - bankapi
+    # networks:
+      # - dev
 
   bankapi:
     depends_on: 
@@ -12,7 +22,7 @@ services:
     image: ${DOCKER_REGISTRY-}bankapi
     container_name: services
     ports:
-      - "8080:8080"
+      - 8080:8080
     restart: always
     build:
       context: ./Backend/BankAPI
@@ -42,7 +52,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     ports:
-      - "5433:5432"
+      - 5433:5432
     restart: always
     volumes:
       - app_data:/var/lib/postgresql/data

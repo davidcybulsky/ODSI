@@ -51,14 +51,24 @@ services.AddAuthentication()
 //Authorization
 services.AddAuthorization();
 
+//Cors
+#pragma warning disable CS8604 // Possible null reference argument.
+services.AddCors(opt =>
+    opt.AddDefaultPolicy(policy => policy.AllowAnyHeader()
+                                        .AllowAnyMethod()
+                                        .WithOrigins(configuration["Cors:Web"]))
+);
+#pragma warning restore CS8604 // Possible null reference argument.
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors();
 
 //app.UseHttpsRedirection();
 
