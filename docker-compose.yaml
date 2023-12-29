@@ -5,23 +5,35 @@ networks:
     driver: bridge
 
 services:
+
   bankapi:
     depends_on: 
-      - "postgres"
+      - postgres
     image: ${DOCKER_REGISTRY-}bankapi
     container_name: services
     ports:
-      - "8080:80"
-      - "8443:443"
+      - "8080:8080"
+    restart: always
     build:
       context: ./Backend/BankAPI
       dockerfile: Dockerfile
     environment:
       - ConnectionStrings__Default=Server=postgres;Database=SafeBankApi;Port=5432;User Id=postgres;Password=postgres;
-      - ASPNETCORE_URLS=http://+:80
+      - ASPNETCORE_URLS=http://+:8080
     networks:
       - dev
-    
+
+  # proxy:
+    # build: 
+      # context: ./Backend/proxy
+      # dockerfile: Dockerfile
+    # ports:
+      # - 8000:80
+    # depends_on: 
+      # - bankapi
+    # networks:
+      # - dev
+
   postgres:
     image: postgres:latest
     container_name: postgres
