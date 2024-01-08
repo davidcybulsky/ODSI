@@ -13,8 +13,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BankAPI.Migrations
 {
     [DbContext(typeof(ApiContext))]
-    [Migration("20231229194716_InitialMigration")]
-    partial class InitialMigration
+    [Migration("20240108203731_Document")]
+    partial class Document
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -72,6 +72,25 @@ namespace BankAPI.Migrations
                     b.HasIndex("AccountId");
 
                     b.ToTable("DebitCards");
+                });
+
+            modelBuilder.Entity("BankAPI.Data.Entities.Document", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AccountId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId")
+                        .IsUnique();
+
+                    b.ToTable("Documents");
                 });
 
             modelBuilder.Entity("BankAPI.Data.Entities.PartialPassword", b =>
@@ -218,6 +237,15 @@ namespace BankAPI.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("BankAPI.Data.Entities.Document", b =>
+                {
+                    b.HasOne("BankAPI.Data.Entities.Account", null)
+                        .WithOne("Document")
+                        .HasForeignKey("BankAPI.Data.Entities.Document", "AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("BankAPI.Data.Entities.PartialPassword", b =>
                 {
                     b.HasOne("BankAPI.Data.Entities.User", null)
@@ -248,6 +276,9 @@ namespace BankAPI.Migrations
             modelBuilder.Entity("BankAPI.Data.Entities.Account", b =>
                 {
                     b.Navigation("DebitCards");
+
+                    b.Navigation("Document")
+                        .IsRequired();
 
                     b.Navigation("Transfers");
                 });

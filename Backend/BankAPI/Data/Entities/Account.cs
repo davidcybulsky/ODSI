@@ -13,6 +13,7 @@
         public int UserId { get; set; }
         public string AccountNumber { get; set; }
         public double AmountOfMoney { get; set; }
+        public Document Document { get; set; } = new();
         public List<DebitCard> DebitCards { get; set; } = [];
         public List<Transfer> Transfers { get; set; } = [];
     }

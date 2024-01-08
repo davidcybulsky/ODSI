@@ -24,6 +24,7 @@ services.AddScoped<IAuthService, AuthService>();
 services.AddScoped<IDebitCardService, DebitCardService>();
 services.AddScoped<IHttpContextService, HttpContextService>();
 services.AddScoped<ITransferService, TransferService>();
+services.AddScoped<IDocumentService, DocumentService>();
 
 //DbContext
 services.AddDbContext<ApiContext>(opt =>

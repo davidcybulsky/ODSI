@@ -9,6 +9,8 @@ namespace BankAPI.Data
 
         public DbSet<DebitCard> DebitCards { get; set; }
 
+        public DbSet<Document> Documents { get; set; }
+
         public DbSet<User> Users { get; set; }
 
         public DbSet<PartialPassword> PartialPasswords { get; set; }
@@ -50,6 +52,11 @@ namespace BankAPI.Data
                 .HasOne(x => x.Account)
                 .WithOne()
                 .HasForeignKey<Account>(x => x.UserId);
+            
+            modelBuilder.Entity<Account>()
+                .HasOne(x => x.Document)
+                .WithOne()
+                .HasForeignKey<Document>(x => x.AccountId);
         }
     }
 }

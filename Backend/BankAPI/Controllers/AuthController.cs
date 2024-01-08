@@ -31,7 +31,7 @@ namespace BankAPI.Controllers
             return Ok();
         }
 
-        [HttpPost("signup")]
+        [HttpPost("add/user")]
         public async Task<ActionResult> SignUpAsync(SignUpDto signUpDto)
         {
             await _authService.SignUpAsync(signUpDto);
