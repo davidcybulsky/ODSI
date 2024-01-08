@@ -1,5 +1,6 @@
 using BankAPI.Interfaces;
 using BankAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BankAPI.Controllers

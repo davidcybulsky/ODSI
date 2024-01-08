@@ -5,16 +5,16 @@ networks:
     driver: bridge
 
 services:
-  # web: 
-    # build:
-      # context: Frontend
-      # dockerfile: Dockerfile
-    # ports:
-      # - 4200:4200
-    # depends_on:
-      # - bankapi
-    # networks:
-      # - dev
+  web: 
+    depends_on:
+      - bankapi
+    build:
+      context: Frontend
+      dockerfile: Dockerfile
+    ports:
+      - 3000:4200
+    networks:
+      - dev
 
   bankapi:
     depends_on: 

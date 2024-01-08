@@ -46,7 +46,10 @@ services.AddHttpContextAccessor();
 
 //Authentication
 services.AddAuthentication()
-    .AddCookie();
+    .AddCookie(options => 
+    {
+        options.LoginPath = "/auth/login";
+    });
 
 //Authorization
 services.AddAuthorization();
@@ -62,11 +65,11 @@ services.AddCors(opt =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+//}
 
 app.UseCors();
 

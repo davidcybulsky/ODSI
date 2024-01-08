@@ -1,11 +1,10 @@
-FROM node:21.5.0-bullseye-slim AS base
-WORKDIR /client
-EXPOSE 4200
+FROM node:21.5.0-bullseye-slim as build
+WORKDIR /usr/src/app
 
-RUN npm install -g @angular/cli@17
+COPY . /usr/src/app
 
-COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm install -g @angular/cli
 
-COPY . . 
-RUN ng serve 
+RUN npm install
+
+CMD ["ng", "serve", "--host", "0.0.0.0"]

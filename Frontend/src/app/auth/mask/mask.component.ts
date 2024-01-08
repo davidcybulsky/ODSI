@@ -2,11 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { LoginModel } from '../../models/login.model';
+import { MaskModel } from '../../models/mask.model';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-mask',
   standalone: true,
   imports: [
+    CommonModule,
     ReactiveFormsModule
   ],
   templateUrl: './mask.component.html',
@@ -15,13 +18,17 @@ import { LoginModel } from '../../models/login.model';
 export class MaskComponent implements  OnInit {
 
   maskForm! : FormGroup;
+  mask: MaskModel | undefined;
 
   constructor(private authService: AuthService,
               private formBuilder: FormBuilder) {
 
   }
+  
   ngOnInit(): void {
     this.initForm()
+    this.mask = this.authService.mask
+    console.log(this.mask)
   }
 
   initForm() {

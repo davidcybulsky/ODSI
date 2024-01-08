@@ -22,12 +22,13 @@ export class AuthService {
       .pipe(
         map( response => {
             this.mask = response
+            console.log(this.mask)
             return response;
     })) 
   }
 
   login(loginModel: LoginModel): Observable<void> {
-    return this.httpClient.post<void>(`${Environment.apiUrl}/login`, loginModel)
+    return this.httpClient.post<void>(`${Environment.apiUrl}/auth/login`, loginModel)
   }
 
   signup() {
