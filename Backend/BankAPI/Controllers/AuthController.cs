@@ -8,12 +8,10 @@ namespace BankAPI.Controllers
     [Route("auth")]
     public class AuthController : ControllerBase
     {
-        private readonly IHttpContextAccessor _http;
         private readonly IAuthService _authService;
 
-        public AuthController(IHttpContextAccessor httpContextAccessor, IAuthService authService)
+        public AuthController(IAuthService authService)
         {
-            _http = httpContextAccessor;
             _authService = authService;
         }
 
@@ -36,6 +34,20 @@ namespace BankAPI.Controllers
         {
             await _authService.SignUpAsync(signUpDto);
             return Ok();
+        }
+
+        [HttpGet("logout")]
+        public async Task<ActionResult> LogoutAsync()
+        {
+            await _authService.LogoutAsync();
+            return Ok();
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<bool>> IsAuthenticatedAsync()
+        {
+            var isAuthenticated = await _authService.IsAuthenticatedAsync();
+            return Ok(isAuthenticated);
         }
     }
 }

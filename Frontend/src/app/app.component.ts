@@ -1,6 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet } from '@angular/router';
+import { Router, RouterOutlet } from '@angular/router';
+import { AuthService } from './services/auth.service';
+import { take } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -9,6 +11,25 @@ import { RouterOutlet } from '@angular/router';
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
+  
+  constructor(private authService: AuthService,
+              private router: Router) {}
+
+  ngOnInit(): void {
+    this.authService.iSAuthenticated().pipe(take(1)).subscribe(
+      success => {
+        if(success === true) {
+          this.router.navigateByUrl("/account")
+        }
+        else {
+          this.router.navigateByUrl("/auth/login")
+        }
+      },
+      error => {
+        this.router.navigateByUrl("/auth/login")
+      })
+  }
+  
   title = 'Frontend';
 }

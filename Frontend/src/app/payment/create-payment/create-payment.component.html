@@ -1,1 +1,6 @@
+<app-links></app-links>
 <p>create-payment works!</p>
+<form [formGroup]="paymentForm" (ngSubmit)="onCreatePayment()">
+    <button type="submit">Create</button>
+    <button (click)="onCancel()">Cancel</button>
+</form>

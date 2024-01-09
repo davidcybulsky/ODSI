@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using BankAPI.Data;
 using BankAPI.Data.Entities;
 using BankAPI.Exceptions;
@@ -6,25 +5,26 @@ using BankAPI.Interfaces;
 using BankAPI.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace BankAPI.Services
 {
     public class AuthService : IAuthService
     {
-        private readonly ApiContext _apiContext;
+        private readonly ApiContext _dbContext;
         private readonly IHttpContextService _httpContextService;
 
-        public AuthService(ApiContext apiContext,
+        public AuthService(ApiContext dbContext,
                            IHttpContextService httpContextService)
         {
-            _apiContext = apiContext;
+            _dbContext = dbContext;
             _httpContextService = httpContextService;
         }
 
         public async Task<MaskInfoDto> GetMask(GetMaskDto getMaskDto)
         {
             Random random = new Random();
-            var user = await _apiContext.Users
+            var user = await _dbContext.Users
                 .Include(x => x.PartialPasswords)
                 .FirstOrDefaultAsync(x => x.Login == getMaskDto.Login);
 
@@ -58,7 +58,7 @@ namespace BankAPI.Services
 
             user.CurrentPartialPassword = partialPassword.Id;
 
-            await _apiContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync();
 
             return new MaskInfoDto()
             {
@@ -66,10 +66,23 @@ namespace BankAPI.Services
             };
         }
 
+        public async Task<bool> IsAuthenticatedAsync()
+        {
+            var sId = await _httpContextService.GetSessionId();
+
+            var sessionInDb = await _dbContext.SessionTokens.FirstOrDefaultAsync(x => x.Token == sId) ?? throw new UnauthorizedException();
+
+            if (sessionInDb.ExpirationDate < DateTime.UtcNow)
+            {
+                throw new UnauthorizedException();
+            }
+            return true;
+        }
+
         public async Task LoginAsync(LoginDto loginDto)
         {
             await Task.Delay(1000);
-            var user = await _apiContext.Users
+            var user = await _dbContext.Users
                 .Include(x => x.PartialPasswords)
                 .Include(x => x.SessionTokens)
                 .FirstOrDefaultAsync(x => x.Login == loginDto.Login);
@@ -91,7 +104,7 @@ namespace BankAPI.Services
             if (result == false)
             {
                 user.CurrentTriesAmmount++;
-                await _apiContext.SaveChangesAsync();
+                await _dbContext.SaveChangesAsync();
                 throw new BadRequestException("Bad login or password");
             }
 
@@ -105,7 +118,7 @@ namespace BankAPI.Services
 
             user.CurrentTriesAmmount = 0;
 
-            await _apiContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync();
 
             ClaimsPrincipal claimsPrincipal = new ClaimsPrincipal(
                 new ClaimsIdentity(
@@ -120,10 +133,17 @@ namespace BankAPI.Services
 
         }
 
-        public Task LogoutAsync()
+        public async Task LogoutAsync()
         {
-            _httpContextService.LogoutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return Task.CompletedTask;
+            var sId = await _httpContextService.GetSessionId();
+
+            var token = _dbContext.SessionTokens.FirstOrDefault(x => x.Token == sId)!;
+
+            token.ExpirationDate = DateTime.UtcNow;
+
+            await _dbContext.SaveChangesAsync();
+
+            await _httpContextService.LogoutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         }
 
         public async Task SignUpAsync(SignUpDto signUpDto)
@@ -138,7 +158,7 @@ namespace BankAPI.Services
                 throw new BadRequestException("Your password does not fullfil security requirements");
             }
 
-            var userInDb = _apiContext.Users.FirstOrDefault(x => x.Login == signUpDto.Login);
+            var userInDb = _dbContext.Users.FirstOrDefault(x => x.Login == signUpDto.Login);
 
             if (userInDb != null)
             {
@@ -179,8 +199,8 @@ namespace BankAPI.Services
                     Mask = mask
                 });
             }
-            await _apiContext.AddAsync(user);
-            await _apiContext.SaveChangesAsync();
+            await _dbContext.AddAsync(user);
+            await _dbContext.SaveChangesAsync();
 
             return;
         }

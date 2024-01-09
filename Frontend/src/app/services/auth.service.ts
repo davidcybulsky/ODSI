@@ -27,7 +27,16 @@ export class AuthService {
     })) 
   }
 
-  login(loginModel: LoginModel) : Observable<void> {
+  login(loginModel: LoginModel): Observable<void> {
     return this.httpClient.post<void>(`${Environment.apiUrl}/auth/login`, loginModel, { withCredentials: true })
   }
+
+  logout(): Observable<void> {
+    return this.httpClient.get<void>(`${Environment.apiUrl}/auth/logout`, { withCredentials: true })
+  }
+
+  iSAuthenticated(): Observable<boolean> {
+    return this.httpClient.get<boolean>(`${Environment.apiUrl}/auth`, { withCredentials: true })
+  }
+
 }

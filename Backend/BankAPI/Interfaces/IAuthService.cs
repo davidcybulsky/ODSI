@@ -8,5 +8,6 @@ namespace BankAPI.Interfaces
         Task LoginAsync(LoginDto loginDto);
         Task SignUpAsync(SignUpDto signUpDto);
         Task LogoutAsync();
+        Task<bool> IsAuthenticatedAsync();
     }
 }
