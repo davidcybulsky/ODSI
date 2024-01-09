@@ -12,6 +12,6 @@ export class DocumentService {
   constructor(private httpClient : HttpClient) { }
 
   getDocuments() : Observable<DocumentModel> {
-    return this.httpClient.get<DocumentModel>(`${Environment.apiUrl}/document`)
+    return this.httpClient.get<DocumentModel>(`${Environment.apiUrl}/document`, { withCredentials : true })
   }
 }

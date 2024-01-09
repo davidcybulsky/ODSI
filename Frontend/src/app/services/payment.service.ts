@@ -13,11 +13,11 @@ export class PaymentService {
   constructor(private httpClient: HttpClient) { }
 
   getPayments() : Observable<PaymentModel[]> {
-    return this.httpClient.get<PaymentModel[]>(`${Environment.apiUrl}/transfer`)
+    return this.httpClient.get<PaymentModel[]>(`${Environment.apiUrl}/transfer`, { withCredentials: true })
   }
 
   createPayment(createPaymentModel : CreatePaymentModel) : Observable<void> {
-    return this.httpClient.post<void>(`${Environment.apiUrl}/transfer`, createPaymentModel)
+    return this.httpClient.post<void>(`${Environment.apiUrl}/transfer`, createPaymentModel, { withCredentials: true })
   }
 
 }

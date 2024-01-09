@@ -1,9 +1,5 @@
 version: '3.4'
 
-networks:
-  dev:
-    driver: bridge
-
 services:
   web: 
     depends_on:
@@ -13,8 +9,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - 3000:4200
-    networks:
-      - dev
+    links:
+      - bankapi
+      #- proxy
 
   bankapi:
     depends_on: 
@@ -30,19 +27,19 @@ services:
     environment:
       - ConnectionStrings__Default=Server=postgres;Database=SafeBankApi;Port=5432;User Id=postgres;Password=postgres;
       - ASPNETCORE_URLS=http://+:8080
-    networks:
-      - dev
+    links:
+      - postgres
 
-  # proxy:
-    # build: 
-      # context: ./Backend/proxy
-      # dockerfile: Dockerfile
-    # ports:
-      # - 8000:80
-    # depends_on: 
-      # - bankapi
-    # networks:
-      # - dev
+  proxy:
+    depends_on: 
+      - bankapi
+    build: 
+      context: ./Backend/proxy
+      dockerfile: Dockerfile
+    ports:
+      - 8000:80
+    links:
+      - bankapi
 
   postgres:
     image: postgres:latest
@@ -56,8 +53,6 @@ services:
     restart: always
     volumes:
       - app_data:/var/lib/postgresql/data
-    networks:
-      - dev
     
 volumes:
   app_data:

@@ -13,10 +13,10 @@ export class AccountService {
   constructor(private httpClient : HttpClient) { }
 
   getAccount() : Observable<AccountModel> {
-    return this.httpClient.get<AccountModel>(`${Environment.apiUrl}/account`)
+    return this.httpClient.get<AccountModel>(`${Environment.apiUrl}/account`, { withCredentials: true })
   }
 
   changePassword(changePasswordModel : ChangePasswordModel) : Observable<void> {
-    return this.httpClient.put<void>(`${Environment.apiUrl}/account`, changePasswordModel)
+    return this.httpClient.put<void>(`${Environment.apiUrl}/account`, changePasswordModel, { withCredentials: true })
   }
 }

@@ -47,7 +47,7 @@ services.AddHttpContextAccessor();
 
 //Authentication
 services.AddAuthentication()
-    .AddCookie(options => 
+    .AddCookie(options =>
     {
         options.LoginPath = "/auth/login";
     });
@@ -60,6 +60,7 @@ services.AddAuthorization();
 services.AddCors(opt =>
     opt.AddDefaultPolicy(policy => policy.AllowAnyHeader()
                                         .AllowAnyMethod()
+                                        .AllowCredentials()
                                         .WithOrigins(configuration["Cors:Web"]))
 );
 #pragma warning restore CS8604 // Possible null reference argument.
@@ -68,8 +69,8 @@ var app = builder.Build();
 
 //if (app.Environment.IsDevelopment())
 //{
-    app.UseSwagger();
-    app.UseSwaggerUI();
+app.UseSwagger();
+app.UseSwaggerUI();
 //}
 
 app.UseCors();

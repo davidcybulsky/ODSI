@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { GetMaskModel } from '../models/get.mask.model';
 import { MaskModel } from '../models/mask.model';
-import { Observable, map } from 'rxjs';
+import { Observable, map, of } from 'rxjs';
 import { LoginModel } from '../models/login.model';
 import { Environment } from '../../environments/environment.prod';
 
@@ -16,9 +16,9 @@ export class AuthService {
 
   constructor(private httpClient: HttpClient) { }
 
-  getmask(getmask: GetMaskModel): Observable<MaskModel> {
-    this.username = getmask.login
-    return this.httpClient.post<MaskModel>(`${Environment.apiUrl}/auth/mask`, getmask)
+  getmask(getmaskModel: GetMaskModel): Observable<MaskModel> {
+    this.username = getmaskModel.login
+    return this.httpClient.post<MaskModel>(`${Environment.apiUrl}/auth/mask`, getmaskModel)
       .pipe(
         map( response => {
             this.mask = response
@@ -27,13 +27,7 @@ export class AuthService {
     })) 
   }
 
-  login(loginModel: LoginModel): Observable<void> {
-    return this.httpClient.post<void>(`${Environment.apiUrl}/auth/login`, loginModel)
+  login(loginModel: LoginModel) : Observable<void> {
+    return this.httpClient.post<void>(`${Environment.apiUrl}/auth/login`, loginModel, { withCredentials: true })
   }
-
-  signup() {
-
-  }
-
-
 }

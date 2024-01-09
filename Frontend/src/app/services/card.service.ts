@@ -12,6 +12,6 @@ export class CardService {
   constructor(private httpClient : HttpClient) { }
 
   getCards() : Observable<CardModel[]> {
-    return this.httpClient.get<CardModel[]>(`${Environment.apiUrl}/card`)
+    return this.httpClient.get<CardModel[]>(`${Environment.apiUrl}/card`, { withCredentials: true })
   }
 }

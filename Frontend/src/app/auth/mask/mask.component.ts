@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { LoginModel } from '../../models/login.model';
 import { MaskModel } from '../../models/mask.model';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-mask',
@@ -21,7 +21,8 @@ export class MaskComponent implements  OnInit {
   mask: MaskModel | undefined;
 
   constructor(private authService: AuthService,
-              private formBuilder: FormBuilder) {
+              private formBuilder: FormBuilder,
+              private router: Router) {
 
   }
   
@@ -34,12 +35,16 @@ export class MaskComponent implements  OnInit {
   initForm() {
     this.maskForm = this.formBuilder.group({
       login : this.authService.username,
-      password: ['']
+      partialPassword: ['']
     })
   }
 
   onSubmit() {
-    this.authService.login(this.maskForm.value).subscribe()
+    this.authService.login(this.maskForm.value).subscribe(
+      response => {
+        this.router.navigateByUrl("/account")
+      }
+    )
   }
 
 
