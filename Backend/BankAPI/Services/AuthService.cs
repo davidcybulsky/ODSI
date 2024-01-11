@@ -23,8 +23,8 @@ namespace BankAPI.Services
 
         public async Task<MaskInfoDto> GetMask(GetMaskDto getMaskDto)
         {
-            Random random = new Random();
-            var user = await _dbContext.Users
+            Random random = new();
+            User? user = await _dbContext.Users
                 .Include(x => x.PartialPasswords)
                 .FirstOrDefaultAsync(x => x.Login == getMaskDto.Login);
 
@@ -32,7 +32,7 @@ namespace BankAPI.Services
 
             if (user == null)
             {
-                List<int> dummyMask = new();
+                List<int> dummyMask = [];
 
                 while (dummyMask.Count() < 8)
                 {
@@ -51,10 +51,10 @@ namespace BankAPI.Services
                 };
             }
 
-            var passwords = user.PartialPasswords.ToList();
-            var index = random.Next(passwords.Count());
-            var partialPassword = passwords.ToArray()[index];
-            var maskCode = partialPassword.Mask;
+            List<PartialPassword> passwords = user.PartialPasswords.ToList();
+            int index = random.Next(passwords.Count());
+            PartialPassword partialPassword = passwords.ToArray()[index];
+            List<int> maskCode = partialPassword.Mask;
 
             user.CurrentPartialPassword = partialPassword.Id;
 
@@ -68,21 +68,17 @@ namespace BankAPI.Services
 
         public async Task<bool> IsAuthenticatedAsync()
         {
-            var sId = await _httpContextService.GetSessionId();
+            string sId = await _httpContextService.GetSessionId();
 
-            var sessionInDb = await _dbContext.SessionTokens.FirstOrDefaultAsync(x => x.Token == sId) ?? throw new UnauthorizedException();
+            SessionToken sessionInDb = await _dbContext.SessionTokens.FirstOrDefaultAsync(x => x.Token == sId) ?? throw new UnauthorizedException();
 
-            if (sessionInDb.ExpirationDate < DateTime.UtcNow)
-            {
-                throw new UnauthorizedException();
-            }
-            return true;
+            return sessionInDb.ExpirationDate < DateTime.UtcNow ? throw new UnauthorizedException() : true;
         }
 
         public async Task LoginAsync(LoginDto loginDto)
         {
             await Task.Delay(1000);
-            var user = await _dbContext.Users
+            User? user = await _dbContext.Users
                 .Include(x => x.PartialPasswords)
                 .Include(x => x.SessionTokens)
                 .FirstOrDefaultAsync(x => x.Login == loginDto.Login);
@@ -97,9 +93,9 @@ namespace BankAPI.Services
                 throw new ForbiddenException();
             }
 
-            var partialPasswordHash = user.PartialPasswords.FirstOrDefault(x => x.Id == user.CurrentPartialPassword)!.Hash;
+            string partialPasswordHash = user.PartialPasswords.FirstOrDefault(x => x.Id == user.CurrentPartialPassword)!.Hash;
 
-            var result = BCrypt.Net.BCrypt.Verify(loginDto.PartialPassword, partialPasswordHash);
+            bool result = BCrypt.Net.BCrypt.Verify(loginDto.PartialPassword, partialPasswordHash);
 
             if (result == false)
             {
@@ -120,11 +116,11 @@ namespace BankAPI.Services
 
             await _dbContext.SaveChangesAsync();
 
-            ClaimsPrincipal claimsPrincipal = new ClaimsPrincipal(
+            ClaimsPrincipal claimsPrincipal = new(
                 new ClaimsIdentity(
                     new Claim[]
                     {
-                        new Claim(ClaimTypes.NameIdentifier, sessionId)
+                        new(ClaimTypes.NameIdentifier, sessionId)
                     },
                     CookieAuthenticationDefaults.AuthenticationScheme
                 ));
@@ -135,13 +131,21 @@ namespace BankAPI.Services
 
         public async Task LogoutAsync()
         {
-            var sId = await _httpContextService.GetSessionId();
+            string sId = await _httpContextService.GetSessionId();
 
-            var token = _dbContext.SessionTokens.FirstOrDefault(x => x.Token == sId)!;
+            SessionToken token = _dbContext.SessionTokens.FirstOrDefault(x => x.Token == sId);
 
-            token.ExpirationDate = DateTime.UtcNow;
+            if (token != null)
+            {
 
-            await _dbContext.SaveChangesAsync();
+                if (token.ExpirationDate < DateTime.UtcNow)
+                {
+                    await _httpContextService.LogoutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                }
+
+                token.ExpirationDate = DateTime.UtcNow;
+                await _dbContext.SaveChangesAsync();
+            }
 
             await _httpContextService.LogoutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         }
@@ -158,7 +162,7 @@ namespace BankAPI.Services
                 throw new BadRequestException("Your password does not fullfil security requirements");
             }
 
-            var userInDb = _dbContext.Users.FirstOrDefault(x => x.Login == signUpDto.Login);
+            User? userInDb = _dbContext.Users.FirstOrDefault(x => x.Login == signUpDto.Login);
 
             if (userInDb != null)
             {
@@ -168,31 +172,30 @@ namespace BankAPI.Services
             User user = new()
             {
                 Login = signUpDto.Login,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(signUpDto.Password)
             };
 
-            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(signUpDto.Password);
-
-            Random random = new Random();
+            Random random = new();
 
             while (user.PartialPasswords.Count < 10)
             {
                 string partialPassword = "";
-                List<int> mask = new List<int>();
+                List<int> mask = [];
                 while (mask.Count < 8)
                 {
-                    var position = random.Next(signUpDto.Password.Length);
+                    int position = random.Next(signUpDto.Password.Length);
                     if (!mask.Contains(position))
                     {
                         mask.Add(position);
                     }
                 }
                 mask.Sort();
-                foreach (var i in mask)
+                foreach (int i in mask)
                 {
                     partialPassword += signUpDto.Password[i];
                 }
 
-                var partialPasswordHash = BCrypt.Net.BCrypt.HashPassword(partialPassword);
+                string partialPasswordHash = BCrypt.Net.BCrypt.HashPassword(partialPassword);
                 user.PartialPasswords.Add(new PartialPassword()
                 {
                     Hash = partialPasswordHash,

@@ -24,23 +24,23 @@ public class DocumentService : IDocumentService
 
     public async Task<DocumentDto> GetDocumentAsync()
     {
-        var sId = await _httpContextService.GetSessionId();
+        string sId = await _httpContextService.GetSessionId();
 
-            var sessionInDb = await _dbContext.SessionTokens.FirstOrDefaultAsync(x => x.Token == sId) ?? throw new UnauthorizedException();
+        Data.Entities.SessionToken sessionInDb = await _dbContext.SessionTokens.FirstOrDefaultAsync(x => x.Token == sId) ?? throw new UnauthorizedException();
 
-            if (sessionInDb.ExpirationDate < DateTime.UtcNow)
-            {
-                throw new UnauthorizedException();
-            }
+        if (sessionInDb.ExpirationDate < DateTime.UtcNow)
+        {
+            throw new UnauthorizedException();
+        }
 
-            var user = _dbContext.Users
-                .Include(x => x.SessionTokens)
-                .Include(x => x.Account)
-                .ThenInclude(x => x.Document)
-                .FirstOrDefault(x => x.SessionTokens.
-                        Any(s => s.Token == sId)) ?? throw new UnauthorizedException();
+        Data.Entities.User user = _dbContext.Users
+            .Include(x => x.SessionTokens)
+            .Include(x => x.Account)
+            .ThenInclude(x => x.Document)
+            .FirstOrDefault(x => x.SessionTokens.
+                    Any(s => s.Token == sId)) ?? throw new UnauthorizedException();
 
-        var document = _mapper.Map<DocumentDto>(user.Account.Document);
+        DocumentDto document = _mapper.Map<DocumentDto>(user.Account.Document);
 
         return document;
     }

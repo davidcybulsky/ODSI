@@ -1,6 +1,20 @@
 <app-links></app-links>
-<p>create-payment works!</p>
 <form [formGroup]="paymentForm" (ngSubmit)="onCreatePayment()">
+    <div>
+        <label for="title">Title</label>
+        <br/>
+        <input id="title" type="text" formControlName="title"/>
+    </div>
+    <div>
+        <label for="account">Receiver's account number</label>
+        <br/>
+        <input id="account" type="text" formControlName="receiversAccountNumber"/>
+    </div>
+    <div>
+        <label for="amount">Ammount of money</label>
+        <br/>
+        <input id="amount" type="number" step="0.01" formControlName="amountOfMoney"/>
+    </div>
     <button type="submit">Create</button>
     <button (click)="onCancel()">Cancel</button>
 </form>

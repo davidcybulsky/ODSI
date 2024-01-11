@@ -6,11 +6,11 @@ namespace BankAPI.Controllers;
 
 [ApiController]
 [Route("document")]
-public class DocumentController : ControllerBase 
+public class DocumentController : ControllerBase
 {
     private readonly IDocumentService _service;
 
-    public DocumentController(IDocumentService service) 
+    public DocumentController(IDocumentService service)
     {
         _service = service;
     }
@@ -18,7 +18,7 @@ public class DocumentController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<DocumentDto>> GetDocumentAsync()
     {
-        var document = await _service.GetDocumentAsync();
+        DocumentDto document = await _service.GetDocumentAsync();
         return Ok(document);
     }
 }

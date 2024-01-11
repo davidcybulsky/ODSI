@@ -18,7 +18,7 @@ namespace BankAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TransferDto>>> GetTransfersAsync()
         {
-            var payments = await _service.GetPaymentHistoryAsync();
+            IEnumerable<TransferDto> payments = await _service.GetPaymentHistoryAsync();
             return Ok(payments);
         }
 

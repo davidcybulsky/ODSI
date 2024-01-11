@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using AutoMapper;
 using BankAPI.Data;
 using BankAPI.Data.Entities;
@@ -7,6 +6,7 @@ using BankAPI.Interfaces;
 using BankAPI.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace BankAPI.Services
 {
@@ -37,55 +37,55 @@ namespace BankAPI.Services
                 throw new BadRequestException("New password does not fullfil security requiements");
             }
 
-            var sId = await _httpContextService.GetSessionId();
+            string sId = await _httpContextService.GetSessionId();
 
-            var sessionInDb = await _dbContext.SessionTokens.FirstOrDefaultAsync(x => x.Token == sId) ?? throw new UnauthorizedException();
+            SessionToken sessionInDb = await _dbContext.SessionTokens.FirstOrDefaultAsync(x => x.Token == sId) ?? throw new UnauthorizedException();
 
             if (sessionInDb.ExpirationDate < DateTime.UtcNow)
             {
                 throw new UnauthorizedException();
             }
 
-            var user = await _dbContext.Users
+            User user = await _dbContext.Users
                 .Include(x => x.SessionTokens)
                 .Include(x => x.Account)
                 .FirstOrDefaultAsync(x => x.SessionTokens.
                         Any(s => s.Token == sId)) ?? throw new UnauthorizedException();
 
-            var result = BCrypt.Net.BCrypt.Verify(changePasswordDto.CurrentPassword, user.PasswordHash);
+            bool result = BCrypt.Net.BCrypt.Verify(changePasswordDto.CurrentPassword, user.PasswordHash);
 
             if (result == false)
             {
                 return;
             }
 
-            var hashedPassword = BCrypt.Net.BCrypt.HashPassword(changePasswordDto.NewPassword);
+            string hashedPassword = BCrypt.Net.BCrypt.HashPassword(changePasswordDto.NewPassword);
 
             user.PasswordHash = hashedPassword;
 
             user.PartialPasswords.Clear();
 
-            Random random = new Random();
+            Random random = new();
 
             while (user.PartialPasswords.Count < 10)
             {
                 string partialPassword = "";
-                List<int> mask = new List<int>();
+                List<int> mask = [];
                 while (mask.Count < 8)
                 {
-                    var position = random.Next(changePasswordDto.NewPassword.Length);
+                    int position = random.Next(changePasswordDto.NewPassword.Length);
                     if (!mask.Contains(position))
                     {
                         mask.Add(position);
                     }
                 }
                 mask.Sort();
-                foreach (var i in mask)
+                foreach (int i in mask)
                 {
                     partialPassword += changePasswordDto.NewPassword[i];
                 }
 
-                var partialPasswordHash = BCrypt.Net.BCrypt.HashPassword(partialPassword);
+                string partialPasswordHash = BCrypt.Net.BCrypt.HashPassword(partialPassword);
                 user.PartialPasswords.Add(new PartialPassword()
                 {
                     Hash = partialPasswordHash,
@@ -93,7 +93,7 @@ namespace BankAPI.Services
                 });
             }
 
-            var token = _dbContext.SessionTokens.FirstOrDefault(x => x.Token == sId)!;
+            SessionToken token = _dbContext.SessionTokens.FirstOrDefault(x => x.Token == sId)!;
 
             token.ExpirationDate = DateTime.UtcNow;
 
@@ -107,11 +107,11 @@ namespace BankAPI.Services
 
             await _dbContext.SaveChangesAsync();
 
-            ClaimsPrincipal claimsPrincipal = new ClaimsPrincipal(
+            ClaimsPrincipal claimsPrincipal = new(
                 new ClaimsIdentity(
                     new Claim[]
                     {
-                        new Claim(ClaimTypes.NameIdentifier, sessionId)
+                        new(ClaimTypes.NameIdentifier, sessionId)
                     },
                     CookieAuthenticationDefaults.AuthenticationScheme
                 ));
@@ -121,24 +121,24 @@ namespace BankAPI.Services
 
         public async Task<AccountDto> GetAccountInfoAsync()
         {
-            var sId = await _httpContextService.GetSessionId();
+            string sId = await _httpContextService.GetSessionId();
 
-            var sessionInDb = await _dbContext.SessionTokens.FirstOrDefaultAsync(x => x.Token == sId) ?? throw new UnauthorizedException();
+            SessionToken sessionInDb = await _dbContext.SessionTokens.FirstOrDefaultAsync(x => x.Token == sId) ?? throw new UnauthorizedException();
 
             if (sessionInDb.ExpirationDate < DateTime.UtcNow)
             {
                 throw new UnauthorizedException();
             }
 
-            var user = _dbContext.Users
+            User user = _dbContext.Users
                 .Include(x => x.SessionTokens)
                 .Include(x => x.Account)
                 .FirstOrDefault(x => x.SessionTokens.
                         Any(s => s.Token == sId)) ?? throw new UnauthorizedException();
 
-            var account = _mapper.Map<AccountDto>(user.Account);
+            AccountDto account = _mapper.Map<AccountDto>(user.Account);
 
-            var token = _dbContext.SessionTokens.FirstOrDefault(x => x.Token == sId)!;
+            SessionToken token = _dbContext.SessionTokens.FirstOrDefault(x => x.Token == sId)!;
 
             token.ExpirationDate = DateTime.UtcNow;
 
@@ -152,11 +152,11 @@ namespace BankAPI.Services
 
             await _dbContext.SaveChangesAsync();
 
-            ClaimsPrincipal claimsPrincipal = new ClaimsPrincipal(
+            ClaimsPrincipal claimsPrincipal = new(
                 new ClaimsIdentity(
                     new Claim[]
                     {
-                        new Claim(ClaimTypes.NameIdentifier, sessionId)
+                        new(ClaimTypes.NameIdentifier, sessionId)
                     },
                     CookieAuthenticationDefaults.AuthenticationScheme
                 ));

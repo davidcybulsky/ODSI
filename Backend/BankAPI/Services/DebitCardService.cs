@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using AutoMapper;
 using BankAPI.Data;
 using BankAPI.Data.Entities;
@@ -7,6 +6,7 @@ using BankAPI.Interfaces;
 using BankAPI.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace BankAPI.Services
 {
@@ -27,25 +27,25 @@ namespace BankAPI.Services
 
         public async Task<IEnumerable<DebitCardDto>> GetDebitCards()
         {
-            var sId = await _httpContextService.GetSessionId();
+            string sId = await _httpContextService.GetSessionId();
 
-            var sessionInDb = await _dbContext.SessionTokens.FirstOrDefaultAsync(x => x.Token == sId) ?? throw new UnauthorizedException();
+            SessionToken sessionInDb = await _dbContext.SessionTokens.FirstOrDefaultAsync(x => x.Token == sId) ?? throw new UnauthorizedException();
 
             if (sessionInDb.ExpirationDate < DateTime.UtcNow)
             {
                 throw new UnauthorizedException();
             }
 
-            var user = _dbContext.Users
+            User user = _dbContext.Users
                 .Include(x => x.SessionTokens)
                 .Include(x => x.Account)
                 .ThenInclude(x => x.DebitCards)
                 .FirstOrDefault(x => x.SessionTokens.
                         Any(s => s.Token == sId)) ?? throw new UnauthorizedException();
 
-            var debitCards = _mapper.Map<IEnumerable<DebitCardDto>>(user.Account.DebitCards);
+            IEnumerable<DebitCardDto> debitCards = _mapper.Map<IEnumerable<DebitCardDto>>(user.Account.DebitCards);
 
-            var token = _dbContext.SessionTokens.FirstOrDefault(x => x.Token == sId)!;
+            SessionToken token = _dbContext.SessionTokens.FirstOrDefault(x => x.Token == sId)!;
 
             token.ExpirationDate = DateTime.UtcNow;
 
@@ -59,11 +59,11 @@ namespace BankAPI.Services
 
             await _dbContext.SaveChangesAsync();
 
-            ClaimsPrincipal claimsPrincipal = new ClaimsPrincipal(
+            ClaimsPrincipal claimsPrincipal = new(
                 new ClaimsIdentity(
                     new Claim[]
                     {
-                        new Claim(ClaimTypes.NameIdentifier, sessionId)
+                        new(ClaimTypes.NameIdentifier, sessionId)
                     },
                     CookieAuthenticationDefaults.AuthenticationScheme
                 ));

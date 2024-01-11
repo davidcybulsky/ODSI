@@ -5,7 +5,7 @@
         public Account()
         {
             AmountOfMoney = 500;
-            Random random = new Random();
+            Random random = new();
             string chars = "1234567890";
             AccountNumber = new string(Enumerable.Repeat(chars, 34).Select(s => s[random.Next(s.Length)]).ToArray());
         }

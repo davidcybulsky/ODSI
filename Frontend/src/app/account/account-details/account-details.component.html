@@ -1,2 +1,18 @@
 <app-links></app-links>
-<p>account-details works!</p>
+<div style="display: flex;">
+    <div class="col-50-inline">
+        <h3 class="central">Cards</h3>
+        <div *ngFor="let card of debitCards">
+            <p [ngClass]="this.isCardVisable ? '' : 'hidden'">{{card.cardNumber}}</p>
+        </div>
+        <button (click)="onChangeVisablilityCard()">{{this.isCardVisable ? "Hide" : "Show"}}</button>
+    </div>
+    <div class="col-50-inline">
+        <h3 class="central">Document</h3>
+        <div class="document">
+            <p>{{document?.firstName}}</p>
+            <p>{{document?.lastName}}</p>
+            <p [ngClass]="this.isVisable ? '' : 'hidden'">{{document?.documentsNumber}}</p><button (click)="onChangeVisablility()">{{this.isVisable ? "Hide" : "Show"}}</button>
+        </div>
+    </div>
+</div>

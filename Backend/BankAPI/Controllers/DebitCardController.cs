@@ -18,7 +18,7 @@ namespace BankAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<DebitCardDto>>> GetDebitCardsAsync()
         {
-            var cards = await _service.GetDebitCards();
+            IEnumerable<DebitCardDto> cards = await _service.GetDebitCards();
             return Ok(cards);
         }
     }

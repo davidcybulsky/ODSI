@@ -52,7 +52,7 @@ namespace BankAPI.Data
                 .HasOne(x => x.Account)
                 .WithOne()
                 .HasForeignKey<Account>(x => x.UserId);
-            
+
             modelBuilder.Entity<Account>()
                 .HasOne(x => x.Document)
                 .WithOne()

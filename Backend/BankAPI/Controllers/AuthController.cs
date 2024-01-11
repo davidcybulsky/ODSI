@@ -18,7 +18,7 @@ namespace BankAPI.Controllers
         [HttpPost("mask")]
         public async Task<ActionResult<MaskInfoDto>> GetMask(GetMaskDto getMaskDto)
         {
-            var maskInfoDto = await _authService.GetMask(getMaskDto);
+            MaskInfoDto maskInfoDto = await _authService.GetMask(getMaskDto);
             return Ok(maskInfoDto);
         }
 
@@ -46,7 +46,7 @@ namespace BankAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<bool>> IsAuthenticatedAsync()
         {
-            var isAuthenticated = await _authService.IsAuthenticatedAsync();
+            bool isAuthenticated = await _authService.IsAuthenticatedAsync();
             return Ok(isAuthenticated);
         }
     }

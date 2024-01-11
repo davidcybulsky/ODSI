@@ -25,12 +25,19 @@ export class CreatePaymentComponent implements OnInit {
 
   ngOnInit(): void {
     this.paymentForm = this.formBuilder.group({
-
+      title: [''],
+      receiversAccountNumber: [''],
+      amountOfMoney: ['']
     })
   }
 
   onCreatePayment() {
-    this.paymentService.createPayment(this.paymentForm.value).subscribe()
+    console.log(this.paymentForm.value)
+    this.paymentService.createPayment(this.paymentForm.value).subscribe(
+      success => {
+        this.router.navigateByUrl("/account")
+      }
+    )
   }
 
   onCancel() {

@@ -25,14 +25,18 @@ export class PasswordComponent implements OnInit {
 
   ngOnInit(): void {
     this.passwordForm = this.formBuilder.group({
-      password: [''],
+      currentPassword: [''],
       newPassword: [''],
-      repeatPassword: [''] 
+      confirmedPassword: [''] 
     })
   }
 
   changePassword(): void {
-    this.accountService.changePassword(this.passwordForm.value).subscribe()
+    this.accountService.changePassword(this.passwordForm.value).subscribe(
+      success => {
+        this.router.navigateByUrl("/account");
+      }
+    )
   }  
 
     

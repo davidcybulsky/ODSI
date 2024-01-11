@@ -1,6 +1,5 @@
 using BankAPI.Interfaces;
 using BankAPI.Models;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BankAPI.Controllers
@@ -19,7 +18,7 @@ namespace BankAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<AccountDto>> GetAccountAsync()
         {
-            var account = await _service.GetAccountInfoAsync();
+            AccountDto account = await _service.GetAccountInfoAsync();
             return Ok(account);
         }
 

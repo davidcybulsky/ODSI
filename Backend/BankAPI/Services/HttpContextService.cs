@@ -1,7 +1,7 @@
-using System.Security.Claims;
 using BankAPI.Exceptions;
 using BankAPI.Interfaces;
 using Microsoft.AspNetCore.Authentication;
+using System.Security.Claims;
 
 namespace BankAPI.Services
 {
@@ -26,8 +26,8 @@ namespace BankAPI.Services
 
         public Task<string> GetSessionId()
         {
-            var user = _httpContextAccessor.HttpContext!.User ?? throw new UnauthorizedException();
-            var claim = user.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier) ?? throw new UnauthorizedException();
+            ClaimsPrincipal user = _httpContextAccessor.HttpContext!.User ?? throw new UnauthorizedException();
+            Claim claim = user.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier) ?? throw new UnauthorizedException();
             return Task.FromResult(claim.Value);
         }
 

@@ -5,9 +5,9 @@ using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 using System.Text.Json.Serialization;
 
-var builder = WebApplication.CreateBuilder(args);
-var configuration = builder.Configuration;
-var services = builder.Services;
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+ConfigurationManager configuration = builder.Configuration;
+IServiceCollection services = builder.Services;
 
 //Swagger
 services.AddEndpointsApiExplorer();
@@ -33,9 +33,15 @@ services.AddDbContext<ApiContext>(opt =>
 });
 
 #pragma warning disable ASP0000 // Do not call 'IServiceCollection.BuildServiceProvider' in 'ConfigureServices'
-using (var db = services.BuildServiceProvider().GetService<ApiContext>())
+using (ApiContext? db = services.BuildServiceProvider().GetService<ApiContext>())
 {
     db!.Database.Migrate();
+    if (!db.Users.Any())
+    {
+        SeedService.Seed(db);
+        db.SaveChanges();
+    }
+
 }
 #pragma warning restore ASP0000 // Do not call 'IServiceCollection.BuildServiceProvider' in 'ConfigureServices'
 
@@ -65,7 +71,7 @@ services.AddCors(opt =>
 );
 #pragma warning restore CS8604 // Possible null reference argument.
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 //if (app.Environment.IsDevelopment())
 //{

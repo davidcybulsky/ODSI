@@ -1,0 +1,10 @@
+.col-50-inline {
+    justify-content: space-between;
+    width: 50%;
+}
+.central {
+    text-align: center;
+}
+.hidden {
+    visibility: hidden;
+}

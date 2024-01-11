@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using AutoMapper;
 using BankAPI.Data;
 using BankAPI.Data.Entities;
@@ -7,6 +6,7 @@ using BankAPI.Interfaces;
 using BankAPI.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace BankAPI.Services
 {
@@ -27,16 +27,16 @@ namespace BankAPI.Services
 
         public async Task<IEnumerable<TransferDto>> GetPaymentHistoryAsync()
         {
-            var sId = await _httpContextService.GetSessionId();
+            string sId = await _httpContextService.GetSessionId();
 
-            var sessionInDb = await _dbContext.SessionTokens.FirstOrDefaultAsync(x => x.Token == sId) ?? throw new UnauthorizedException();
+            SessionToken sessionInDb = await _dbContext.SessionTokens.FirstOrDefaultAsync(x => x.Token == sId) ?? throw new UnauthorizedException();
 
             if (sessionInDb.ExpirationDate < DateTime.UtcNow)
             {
                 throw new UnauthorizedException();
             }
 
-            var user = _dbContext.Users
+            User user = _dbContext.Users
                 .Include(x => x.SessionTokens)
                 .Include(x => x.Account)
                 .ThenInclude(x => x.Transfers)
@@ -45,29 +45,28 @@ namespace BankAPI.Services
 
             List<TransferDto> transferDtos = [];
 
-            var receivedTransfers = _dbContext.Transfers.Where(x => x.ReceiverId == user.Id).ToList();
+            List<Transfer> receivedTransfers = await _dbContext.Transfers.Where(x => x.ReceiverId == user.Id).ToListAsync();
 
-            foreach (var transfer in receivedTransfers)
+            foreach (Transfer? transfer in receivedTransfers)
             {
-                var dto = _mapper.Map<TransferDto>(transfer);
+                TransferDto dto = _mapper.Map<TransferDto>(transfer);
                 dto.BalanceBefore = transfer.ReceiversBalanceBefore;
                 dto.BalanceAfter = transfer.ReceiversBalanceAfter;
                 transferDtos.Add(dto);
             }
 
-            var issuedTransfers = _dbContext.Transfers.Where(x => x.IssuerId == user.Id).ToList();
+            List<Transfer> issuedTransfers = await _dbContext.Transfers.Where(x => x.IssuerId == user.Id).ToListAsync();
 
-            foreach (var transfer in issuedTransfers)
+            foreach (Transfer? transfer in issuedTransfers)
             {
-                var dto = _mapper.Map<TransferDto>(transfer);
+                TransferDto dto = _mapper.Map<TransferDto>(transfer);
+                dto.AmountOfMoney = -transfer.AmountOfMoney;
                 dto.BalanceBefore = transfer.IssuersBalanceBefore;
                 dto.BalanceAfter = transfer.IssuersBalanceAfter;
                 transferDtos.Add(dto);
             }
 
-            var token = _dbContext.SessionTokens.FirstOrDefault(x => x.Token == sId)!;
-
-            token.ExpirationDate = DateTime.UtcNow;
+            sessionInDb.ExpirationDate = DateTime.UtcNow;
 
             string sessionId = Guid.NewGuid().ToString();
 
@@ -79,11 +78,11 @@ namespace BankAPI.Services
 
             await _dbContext.SaveChangesAsync();
 
-            ClaimsPrincipal claimsPrincipal = new ClaimsPrincipal(
+            ClaimsPrincipal claimsPrincipal = new(
                 new ClaimsIdentity(
                     new Claim[]
                     {
-                        new Claim(ClaimTypes.NameIdentifier, sessionId)
+                        new(ClaimTypes.NameIdentifier, sessionId)
                     },
                     CookieAuthenticationDefaults.AuthenticationScheme
                 ));
@@ -95,26 +94,26 @@ namespace BankAPI.Services
 
         public async Task MakePaymentAsync(MakeTransferDto makePaymentDto)
         {
-            var sId = await _httpContextService.GetSessionId();
+            string sId = await _httpContextService.GetSessionId();
 
-            var sessionInDb = await _dbContext.SessionTokens.FirstOrDefaultAsync(x => x.Token == sId) ?? throw new UnauthorizedException();
+            SessionToken sessionInDb = await _dbContext.SessionTokens.FirstOrDefaultAsync(x => x.Token == sId) ?? throw new UnauthorizedException();
 
             if (sessionInDb.ExpirationDate < DateTime.UtcNow)
             {
                 throw new UnauthorizedException();
             }
 
-            var issuer = _dbContext.Users
+            User issuer = await _dbContext.Users
                 .Include(x => x.SessionTokens)
                 .Include(x => x.Account)
                 .ThenInclude(x => x.Transfers)
-                .FirstOrDefault(x => x.SessionTokens.
+                .FirstOrDefaultAsync(x => x.SessionTokens.
                         Any(s => s.Token == sId)) ?? throw new UnauthorizedException();
 
-            var receiver = _dbContext.Users
+            User receiver = await _dbContext.Users
                 .Include(x => x.Account)
                 .ThenInclude(x => x.Transfers)
-                .FirstOrDefault(x => x.Account.AccountNumber == makePaymentDto.ReceiversAccountNumber)
+                .FirstOrDefaultAsync(x => x.Account.AccountNumber == makePaymentDto.ReceiversAccountNumber)
                     ?? throw new BadRequestException();
 
             if (issuer.Account.AmountOfMoney - makePaymentDto.AmountOfMoney < 0)
@@ -122,7 +121,7 @@ namespace BankAPI.Services
                 throw new BadRequestException();
             }
 
-            Transfer transfer = new Transfer()
+            Transfer transfer = new()
             {
                 IssuerId = issuer.Id,
                 ReceiverId = receiver.Id,
@@ -142,9 +141,7 @@ namespace BankAPI.Services
             transfer.ReceiversBalanceAfter = receiver.Account.AmountOfMoney;
             transfer.IssuersBalanceAfter = issuer.Account.AmountOfMoney;
 
-            var token = _dbContext.SessionTokens.FirstOrDefault(x => x.Token == sId)!;
-
-            token.ExpirationDate = DateTime.UtcNow;
+            sessionInDb.ExpirationDate = DateTime.UtcNow;
 
             string sessionId = Guid.NewGuid().ToString();
 
@@ -156,11 +153,11 @@ namespace BankAPI.Services
 
             await _dbContext.SaveChangesAsync();
 
-            ClaimsPrincipal claimsPrincipal = new ClaimsPrincipal(
+            ClaimsPrincipal claimsPrincipal = new(
                 new ClaimsIdentity(
                     new Claim[]
                     {
-                        new Claim(ClaimTypes.NameIdentifier, sessionId)
+                        new(ClaimTypes.NameIdentifier, sessionId)
                     },
                     CookieAuthenticationDefaults.AuthenticationScheme
                 ));
