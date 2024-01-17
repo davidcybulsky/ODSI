@@ -33,6 +33,20 @@ public class DocumentService : IDocumentService
             throw new UnauthorizedException();
         }
 
+        string csrf = await _httpContextService.GetCsrfTokenAsync();
+
+        if (csrf is null)
+        {
+            throw new UnauthorizedException();
+        }
+        else
+        {
+            if (csrf != sessionInDb.CsrfToken)
+            {
+                throw new UnauthorizedException();
+            }
+        }
+
         Data.Entities.User user = _dbContext.Users
             .Include(x => x.SessionTokens)
             .Include(x => x.Account)

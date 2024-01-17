@@ -1,5 +1,5 @@
 <span>Your mask is:</span>
-<span *ngFor="let number of mask?.mask"> {{number}} </span>
+<span *ngFor="let number of mask?.mask"> {{number + 1}} </span>
 <form [formGroup]="maskForm" (ngSubmit)="onSubmit()">
     <label for="password">Password</label>
     <br>

@@ -66,16 +66,30 @@ namespace BankAPI.Services
             };
         }
 
-        public async Task<bool> IsAuthenticatedAsync()
+        public async Task<CsrfDto> IsAuthenticatedAsync()
         {
             string sId = await _httpContextService.GetSessionId();
 
-            SessionToken sessionInDb = await _dbContext.SessionTokens.FirstOrDefaultAsync(x => x.Token == sId) ?? throw new UnauthorizedException();
+            User user = await _dbContext.Users.Include(x => x.SessionTokens).FirstOrDefaultAsync(x => x.SessionTokens.Any(x => x.Token == sId)) ?? throw new UnauthorizedException();
 
-            return sessionInDb.ExpirationDate < DateTime.UtcNow ? throw new UnauthorizedException() : true;
+            if (user.SessionTokens.FirstOrDefault(x => x.Token == sId)!.ExpirationDate < DateTime.UtcNow)
+            {
+                string csrf = Guid.NewGuid().ToString();
+                SessionToken? session = await _dbContext.SessionTokens.FirstOrDefaultAsync(x => x.Token == sId);
+                session!.CsrfToken = csrf;
+                await _dbContext.SaveChangesAsync();
+                return new CsrfDto()
+                {
+                    Csrf = csrf
+                };
+            }
+            else
+            {
+                return new CsrfDto();
+            }
         }
 
-        public async Task LoginAsync(LoginDto loginDto)
+        public async Task<CsrfDto> LoginAsync(LoginDto loginDto)
         {
             await Task.Delay(1000);
             User? user = await _dbContext.Users
@@ -106,8 +120,11 @@ namespace BankAPI.Services
 
             string sessionId = Guid.NewGuid().ToString();
 
+            string csrf = Guid.NewGuid().ToString();
+
             user.SessionTokens.Add(new SessionToken
             {
+                CsrfToken = csrf,
                 Token = sessionId,
                 ExpirationDate = DateTime.UtcNow.AddMinutes(5)
             });
@@ -127,6 +144,10 @@ namespace BankAPI.Services
 
             await _httpContextService.AuthenticateUsingCookie(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal);
 
+            return (new CsrfDto()
+            {
+                Csrf = csrf
+            });
         }
 
         public async Task LogoutAsync()
@@ -135,8 +156,24 @@ namespace BankAPI.Services
 
             SessionToken token = _dbContext.SessionTokens.FirstOrDefault(x => x.Token == sId);
 
+
+            string csrf = await _httpContextService.GetCsrfTokenAsync();
+
+
+
             if (token != null)
             {
+                if (csrf is null)
+                {
+                    throw new UnauthorizedException();
+                }
+                else
+                {
+                    if (csrf != token.CsrfToken)
+                    {
+                        throw new UnauthorizedException();
+                    }
+                }
 
                 if (token.ExpirationDate < DateTime.UtcNow)
                 {

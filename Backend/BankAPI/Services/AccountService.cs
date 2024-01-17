@@ -46,6 +46,20 @@ namespace BankAPI.Services
                 throw new UnauthorizedException();
             }
 
+            string csrf = await _httpContextService.GetCsrfTokenAsync();
+
+            if (csrf is null)
+            {
+                throw new UnauthorizedException();
+            }
+            else
+            {
+                if (csrf != sessionInDb.CsrfToken)
+                {
+                    throw new UnauthorizedException();
+                }
+            }
+
             User user = await _dbContext.Users
                 .Include(x => x.SessionTokens)
                 .Include(x => x.Account)
@@ -56,7 +70,7 @@ namespace BankAPI.Services
 
             if (result == false)
             {
-                return;
+                throw new BadRequestException("Bad password");
             }
 
             string hashedPassword = BCrypt.Net.BCrypt.HashPassword(changePasswordDto.NewPassword);
@@ -102,6 +116,7 @@ namespace BankAPI.Services
             user.SessionTokens.Add(new SessionToken
             {
                 Token = sessionId,
+                CsrfToken = csrf,
                 ExpirationDate = DateTime.UtcNow.AddMinutes(5)
             });
 
@@ -130,6 +145,20 @@ namespace BankAPI.Services
                 throw new UnauthorizedException();
             }
 
+            string csrf = await _httpContextService.GetCsrfTokenAsync();
+
+            if (csrf is null)
+            {
+                throw new UnauthorizedException();
+            }
+            else
+            {
+                if (csrf != sessionInDb.CsrfToken)
+                {
+                    throw new UnauthorizedException();
+                }
+            }
+
             User user = _dbContext.Users
                 .Include(x => x.SessionTokens)
                 .Include(x => x.Account)
@@ -147,6 +176,7 @@ namespace BankAPI.Services
             user.SessionTokens.Add(new SessionToken
             {
                 Token = sessionId,
+                CsrfToken = csrf,
                 ExpirationDate = DateTime.UtcNow.AddMinutes(5)
             });
 

@@ -36,6 +36,20 @@ namespace BankAPI.Services
                 throw new UnauthorizedException();
             }
 
+            string csrf = await _httpContextService.GetCsrfTokenAsync();
+
+            if (csrf is null)
+            {
+                throw new UnauthorizedException();
+            }
+            else
+            {
+                if (csrf != sessionInDb.CsrfToken)
+                {
+                    throw new UnauthorizedException();
+                }
+            }
+
             User user = _dbContext.Users
                 .Include(x => x.SessionTokens)
                 .Include(x => x.Account)
@@ -73,6 +87,7 @@ namespace BankAPI.Services
             user.SessionTokens.Add(new SessionToken
             {
                 Token = sessionId,
+                CsrfToken = csrf,
                 ExpirationDate = DateTime.UtcNow.AddMinutes(5)
             });
 
@@ -103,6 +118,20 @@ namespace BankAPI.Services
                 throw new UnauthorizedException();
             }
 
+            string csrf = await _httpContextService.GetCsrfTokenAsync();
+
+            if (csrf is null)
+            {
+                throw new UnauthorizedException();
+            }
+            else
+            {
+                if (csrf != sessionInDb.CsrfToken)
+                {
+                    throw new UnauthorizedException();
+                }
+            }
+
             User issuer = await _dbContext.Users
                 .Include(x => x.SessionTokens)
                 .Include(x => x.Account)
@@ -115,6 +144,16 @@ namespace BankAPI.Services
                 .ThenInclude(x => x.Transfers)
                 .FirstOrDefaultAsync(x => x.Account.AccountNumber == makePaymentDto.ReceiversAccountNumber)
                     ?? throw new BadRequestException();
+
+            if (issuer.Account.AccountNumber == receiver.Account.AccountNumber)
+            {
+                throw new BadRequestException();
+            }
+
+            if (makePaymentDto.AmountOfMoney <= 0)
+            {
+                throw new BadRequestException();
+            }
 
             if (issuer.Account.AmountOfMoney - makePaymentDto.AmountOfMoney < 0)
             {
@@ -148,6 +187,7 @@ namespace BankAPI.Services
             issuer.SessionTokens.Add(new SessionToken
             {
                 Token = sessionId,
+                CsrfToken = csrf,
                 ExpirationDate = DateTime.UtcNow.AddMinutes(5)
             });
 

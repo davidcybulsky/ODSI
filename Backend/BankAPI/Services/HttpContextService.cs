@@ -35,5 +35,11 @@ namespace BankAPI.Services
         {
             await _httpContextAccessor.HttpContext!.SignOutAsync(scheme);
         }
+
+        public Task<string> GetCsrfTokenAsync()
+        {
+            string csrf = _httpContextAccessor.HttpContext!.Request.Headers["XSRF-Token"].ToString();
+            return Task.FromResult(csrf);
+        }
     }
 }

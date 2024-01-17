@@ -5,6 +5,7 @@ import { MaskModel } from '../models/mask.model';
 import { Observable, map, of } from 'rxjs';
 import { LoginModel } from '../models/login.model';
 import { Environment } from '../../environments/environment.prod';
+import { CsrfModel } from '../models/csrf.model';
 
 @Injectable({
   providedIn: 'root'
@@ -13,6 +14,7 @@ export class AuthService {
 
   mask: MaskModel | undefined
   username: string | undefined
+  XSRF_Token: string | undefined
 
   constructor(private httpClient: HttpClient) { }
 
@@ -27,8 +29,14 @@ export class AuthService {
     })) 
   }
 
-  login(loginModel: LoginModel): Observable<void> {
-    return this.httpClient.post<void>(`${Environment.apiUrl}/auth/login`, loginModel, { withCredentials: true })
+  login(loginModel: LoginModel): Observable<CsrfModel> {
+    return this.httpClient.post<CsrfModel>(`${Environment.apiUrl}/auth/login`, loginModel, { withCredentials: true }).pipe(
+      map(response => {
+        console.log(response)
+        this.XSRF_Token = response.csrf
+        return response
+      })
+    )
   }
 
   logout(): Observable<void> {
@@ -38,5 +46,4 @@ export class AuthService {
   iSAuthenticated(): Observable<boolean> {
     return this.httpClient.get<boolean>(`${Environment.apiUrl}/auth`, { withCredentials: true })
   }
-
 }

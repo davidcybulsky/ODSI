@@ -23,10 +23,10 @@ namespace BankAPI.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult> LoginAsync(LoginDto loginDto)
+        public async Task<ActionResult<CsrfDto>> LoginAsync(LoginDto loginDto)
         {
-            await _authService.LoginAsync(loginDto);
-            return Ok();
+            CsrfDto csrf = await _authService.LoginAsync(loginDto);
+            return Ok(csrf);
         }
 
         [HttpPost("add/user")]
@@ -44,10 +44,10 @@ namespace BankAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<bool>> IsAuthenticatedAsync()
+        public async Task<ActionResult<CsrfDto>> IsAuthenticatedAsync()
         {
-            bool isAuthenticated = await _authService.IsAuthenticatedAsync();
-            return Ok(isAuthenticated);
+            CsrfDto csrf = await _authService.IsAuthenticatedAsync();
+            return Ok(csrf);
         }
     }
 }

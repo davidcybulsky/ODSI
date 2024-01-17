@@ -10,30 +10,30 @@ public static class ErrorHandlingMiddleware
             {
                 await next.Invoke(context);
             }
-            catch (BadRequestException ex)
+            catch (BadRequestException)
             {
                 context.Response.StatusCode = 400;
-                await context.Response.WriteAsync(ex.Message);
+                await context.Response.WriteAsync("Bad request");
             }
-            catch (UnauthorizedException ex)
+            catch (UnauthorizedException)
             {
                 context.Response.StatusCode = 401;
-                await context.Response.WriteAsync(ex.Message);
+                await context.Response.WriteAsync("Unauthorized");
             }
-            catch (ForbiddenException ex)
+            catch (ForbiddenException)
             {
                 context.Response.StatusCode = 403;
-                await context.Response.WriteAsync(ex.Message);
+                await context.Response.WriteAsync("Forbidden");
             }
-            catch (NotFoundException ex)
+            catch (NotFoundException)
             {
                 context.Response.StatusCode = 404;
-                await context.Response.WriteAsync(ex.Message);
+                await context.Response.WriteAsync("Not found");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 context.Response.StatusCode = 500;
-                await context.Response.WriteAsync(ex.Message);
+                await context.Response.WriteAsync("Something went wrong");
             }
         });
         return applicationBuilder;
