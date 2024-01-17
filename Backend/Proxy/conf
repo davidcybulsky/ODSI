@@ -5,14 +5,3 @@ server {
         proxy_pass   http://bankapi:8080;
     }
 }
-
-server {
-    listen       443;
-    ssl          on;
-    ssl_certificate /etc/nginx/conf/bank.crt;
-    ssl_certificate_key /etc/nginx/conf/bank.key;
-    server_name localhost;
-    location / {
-        proxy_pass   http://bankapi:8080;
-    }
-}

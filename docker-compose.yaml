@@ -8,10 +8,10 @@ services:
       context: Frontend
       dockerfile: Dockerfile
     ports:
-      - 3000:4200
+      - 4200:4200
     links:
-      - bankapi
-      #- proxy
+      #- bankapi
+      - proxy
 
   bankapi:
     depends_on: 
