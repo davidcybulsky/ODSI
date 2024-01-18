@@ -1,10 +1,15 @@
-FROM node:21.5.0-bullseye-slim as build
-WORKDIR /usr/src/app
+FROM node:18.18-alpine3.18 as build
 
-COPY . /usr/src/app
+WORKDIR /app
 
-RUN npm install -g @angular/cli
+COPY . .
 
-RUN npm install
+RUN npm ci
 
-CMD ["ng", "serve", "--host", "0.0.0.0"]
+RUN npm run build
+
+FROM nginx:latest
+
+COPY nginx.conf /etc/nginx/nginx.conf
+
+COPY --from=build /app/dist/frontend/browser /usr/share/nginx/html
