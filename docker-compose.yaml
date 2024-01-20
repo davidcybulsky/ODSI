@@ -6,16 +6,16 @@ networks:
 
 services:
 
-#  web: 
-#    depends_on:
-#      - bankapi
-#    build:
-#      context: Frontend
-#      dockerfile: Dockerfile
-#    ports:
-#      - 4200:443
-#    networks:
-#      - dev     
+  web: 
+    depends_on:
+      - bankapi
+    build:
+      context: Frontend
+      dockerfile: Dockerfile
+    ports:
+      - 4200:443
+    networks:
+      - dev     
 
   bankapi:
     depends_on: 
