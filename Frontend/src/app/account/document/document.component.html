@@ -1,0 +1,9 @@
+<app-links></app-links>
+<div class="col-50-inline">
+    <h3 class="central">Document</h3>
+    <div class="document">
+        <p>{{document?.firstName}}</p>
+        <p>{{document?.lastName}}</p>
+        <p [ngClass]="this.isVisable ? '' : 'hidden'">{{document?.documentsNumber}}</p><button (click)="onChangeVisablility()">{{this.isVisable ? "Hide" : "Show"}}</button>
+    </div>
+</div>

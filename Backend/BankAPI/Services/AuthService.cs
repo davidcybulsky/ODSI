@@ -72,7 +72,7 @@ namespace BankAPI.Services
 
             User user = await _dbContext.Users.Include(x => x.SessionTokens).FirstOrDefaultAsync(x => x.SessionTokens.Any(x => x.Token == sId)) ?? throw new UnauthorizedException();
 
-            if (user.SessionTokens.FirstOrDefault(x => x.Token == sId)!.ExpirationDate < DateTime.UtcNow)
+            if (user.SessionTokens.FirstOrDefault(x => x.Token == sId)!.ExpirationDate > DateTime.UtcNow)
             {
                 string csrf = Guid.NewGuid().ToString();
                 SessionToken? session = await _dbContext.SessionTokens.FirstOrDefaultAsync(x => x.Token == sId);

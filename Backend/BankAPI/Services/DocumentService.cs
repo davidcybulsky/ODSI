@@ -1,10 +1,13 @@
 using AutoMapper;
 using BankAPI.Data;
+using BankAPI.Data.Entities;
 using BankAPI.Exceptions;
 using BankAPI.Interfaces;
 using BankAPI.Models;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace BankAPI.Services;
 
@@ -38,9 +41,9 @@ public class DocumentService : IDocumentService
             throw new UnauthorizedException();
         }
 
-        //string csrf = await _httpContextService.GetCsrfTokenAsync();
+        string csrf = await _httpContextService.GetCsrfTokenAsync();
 
-        /*if (csrf is null)
+        if (csrf is null)
         {
             throw new UnauthorizedException();
         }
@@ -50,7 +53,7 @@ public class DocumentService : IDocumentService
             {
                 throw new UnauthorizedException();
             }
-        }*/
+        }
 
         Data.Entities.User user = _dbContext.Users
             .Include(x => x.SessionTokens)
@@ -62,6 +65,33 @@ public class DocumentService : IDocumentService
         DocumentDto document = _mapper.Map<DocumentDto>(user.Account.Document);
 
         document.DocumentsNumber = _dataProtector.Unprotect(document.DocumentsNumber);
+
+        SessionToken token = _dbContext.SessionTokens.FirstOrDefault(x => x.Token == sId)!;
+
+        token.ExpirationDate = DateTime.UtcNow;
+
+        string sessionId = Guid.NewGuid().ToString();
+
+        user.SessionTokens.Add(new SessionToken
+        {
+            Token = sessionId,
+            CsrfToken = csrf,
+            ExpirationDate = DateTime.UtcNow.AddMinutes(5)
+        });
+
+        await _dbContext.SaveChangesAsync();
+
+        ClaimsPrincipal claimsPrincipal = new(
+            new ClaimsIdentity(
+                new Claim[]
+                {
+                        new(ClaimTypes.NameIdentifier, sessionId)
+                },
+                CookieAuthenticationDefaults.AuthenticationScheme
+            ));
+
+        await _httpContextService.AuthenticateUsingCookie(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal);
+
 
         return document;
     }
