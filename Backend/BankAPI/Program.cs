@@ -1,6 +1,7 @@
 using BankAPI.Data;
 using BankAPI.Interfaces;
 using BankAPI.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 using System.Text.Json.Serialization;
@@ -34,7 +35,7 @@ services.AddDbContext<ApiContext>(opt =>
 });
 
 //DataProtection
-services.AddDataProtection();
+services.AddDataProtection().PersistKeysToDbContext<ApiContext>();
 
 #pragma warning disable ASP0000 // Do not call 'IServiceCollection.BuildServiceProvider' in 'ConfigureServices'
 using (ApiContext? db = services.BuildServiceProvider().GetService<ApiContext>())
