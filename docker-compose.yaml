@@ -1,58 +1,54 @@
 version: '3.4'
 
+networks:
+  dev:
+    driver: bridge
+
 services:
-  web: 
-    depends_on:
-      - bankapi
-    build:
-      context: Frontend
-      dockerfile: Dockerfile
-    ports:
-      - 4200:80
-    links:
-      #- bankapi
-      - proxy
+
+#  web: 
+#    depends_on:
+#      - bankapi
+#    build:
+#      context: Frontend
+#      dockerfile: Dockerfile
+#    ports:
+#      - 4200:443
+#    networks:
+#      - dev     
 
   bankapi:
     depends_on: 
       - postgres
-    image: ${DOCKER_REGISTRY-}bankapi
-    container_name: services
-    ports:
-      - 8080:8080
-    restart: always
     build:
       context: ./Backend/BankAPI
       dockerfile: Dockerfile
-    environment:
-      - ConnectionStrings__Default=Server=postgres;Database=SafeBankApi;Port=5432;User Id=postgres;Password=postgres;
-      - ASPNETCORE_URLS=http://+:8080
-    links:
-      - postgres
-
-  proxy:
-    depends_on: 
-      - bankapi
-    build: 
-      context: ./Backend/proxy
-      dockerfile: Dockerfile
     ports:
-      - 8000:80
-    links:
-      - bankapi
+      - "8080:80"
+      - "8081:443"
+    environment:
+      ConnectionStrings__Default: "Server=postgres;Database=SafeBankApi;Port=5432;User Id=postgres;Password=postgres;"
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ASPNETCORE_URLS: "https://+;http://+"
+      ASPNETCORE_HTTPS_PORT: "8081"
+    networks:
+      - dev
+    volumes:
+      - ${APPDATA}\microsoft\UserSecrets\:/root/.microsoft/usersecrets
+      - ${USERPROFILE}\.aspnet\https:/root/.aspnet/https/
 
   postgres:
     image: postgres:latest
-    container_name: postgres
     environment:
       - POSTGRES_DB=SafeBankApi
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     ports:
       - 5433:5432
-    restart: always
     volumes:
       - app_data:/var/lib/postgresql/data
+    networks:
+      - dev
     
 volumes:
   app_data:

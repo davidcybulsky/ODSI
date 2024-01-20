@@ -3,6 +3,7 @@ using BankAPI.Data;
 using BankAPI.Exceptions;
 using BankAPI.Interfaces;
 using BankAPI.Models;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 
 namespace BankAPI.Services;
@@ -11,15 +12,19 @@ public class DocumentService : IDocumentService
 {
     private readonly ApiContext _dbContext;
     private readonly IHttpContextService _httpContextService;
+    private readonly IDataProtector _dataProtector;
     private readonly IMapper _mapper;
 
     public DocumentService(ApiContext dbContext,
                            IMapper mapper,
-                           IHttpContextService httpContextService)
+                           IHttpContextService httpContextService,
+            IDataProtectionProvider dataProtectionProvider,
+            IConfiguration configuration)
     {
         _dbContext = dbContext;
         _mapper = mapper;
         _httpContextService = httpContextService;
+        _dataProtector = dataProtectionProvider.CreateProtector(configuration["DataProtector:SymmetricKey"]);
     }
 
     public async Task<DocumentDto> GetDocumentAsync()
@@ -33,9 +38,9 @@ public class DocumentService : IDocumentService
             throw new UnauthorizedException();
         }
 
-        string csrf = await _httpContextService.GetCsrfTokenAsync();
+        //string csrf = await _httpContextService.GetCsrfTokenAsync();
 
-        if (csrf is null)
+        /*if (csrf is null)
         {
             throw new UnauthorizedException();
         }
@@ -45,7 +50,7 @@ public class DocumentService : IDocumentService
             {
                 throw new UnauthorizedException();
             }
-        }
+        }*/
 
         Data.Entities.User user = _dbContext.Users
             .Include(x => x.SessionTokens)
@@ -55,6 +60,8 @@ public class DocumentService : IDocumentService
                     Any(s => s.Token == sId)) ?? throw new UnauthorizedException();
 
         DocumentDto document = _mapper.Map<DocumentDto>(user.Account.Document);
+
+        document.DocumentsNumber = _dataProtector.Unprotect(document.DocumentsNumber);
 
         return document;
     }

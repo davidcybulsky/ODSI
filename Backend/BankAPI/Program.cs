@@ -25,6 +25,7 @@ services.AddScoped<IDebitCardService, DebitCardService>();
 services.AddScoped<IHttpContextService, HttpContextService>();
 services.AddScoped<ITransferService, TransferService>();
 services.AddScoped<IDocumentService, DocumentService>();
+services.AddScoped<SeedService>();
 
 //DbContext
 services.AddDbContext<ApiContext>(opt =>
@@ -32,16 +33,20 @@ services.AddDbContext<ApiContext>(opt =>
     opt.UseNpgsql(configuration.GetConnectionString("Default"));
 });
 
+//DataProtection
+services.AddDataProtection();
+
 #pragma warning disable ASP0000 // Do not call 'IServiceCollection.BuildServiceProvider' in 'ConfigureServices'
 using (ApiContext? db = services.BuildServiceProvider().GetService<ApiContext>())
 {
-    db!.Database.Migrate();
-    if (!db.Users.Any())
+    SeedService seedService = services.BuildServiceProvider().GetService<SeedService>();
     {
-        SeedService.Seed(db);
-        db.SaveChanges();
+        db!.Database.Migrate();
+        if (!db.Users.Any())
+        {
+            seedService!.Seed();
+        }
     }
-
 }
 #pragma warning restore ASP0000 // Do not call 'IServiceCollection.BuildServiceProvider' in 'ConfigureServices'
 
@@ -56,6 +61,8 @@ services.AddAuthentication()
     .AddCookie(options =>
     {
         options.LoginPath = "/auth/login";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     });
 
 //Authorization
@@ -81,7 +88,7 @@ app.UseSwaggerUI();
 
 app.UseCors();
 
-//app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 
 app.UseCustomErrorHandler();
 

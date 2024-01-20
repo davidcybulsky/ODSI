@@ -1,13 +1,23 @@
 ﻿using BankAPI.Data;
 using BankAPI.Data.Entities;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace BankAPI.Services
 {
-    public static class SeedService
+    public class SeedService
     {
-        public static void Seed(ApiContext apiContext)
+        private readonly ApiContext _apiContext;
+        private readonly IDataProtector _dataProtector;
+
+        public SeedService(ApiContext apiContext, IDataProtectionProvider dataProtectionProvider, IConfiguration configuration)
         {
-            apiContext.AddRange(
+            _apiContext = apiContext;
+            _dataProtector = dataProtectionProvider.CreateProtector(configuration["DataProtector:SymmetricKey"]);
+        }
+
+        public void Seed()
+        {
+            _apiContext.AddRange(
                 new User()
                 {
                     Id = 1,
@@ -86,12 +96,12 @@ namespace BankAPI.Services
                         [
                             new DebitCard()
                             {
-                                CardNumber = "1234567890123456",
+                                CardNumber = _dataProtector.Protect("1234567890123456"),
                                 AccountId = 1,
                             },
                             new DebitCard()
                             {
-                                CardNumber = "2345678901234567",
+                                CardNumber = _dataProtector.Protect("2345678901234567"),
                                 AccountId = 1
                             }
                         ],
@@ -101,7 +111,7 @@ namespace BankAPI.Services
                             AccountId = 1,
                             FirstName = "Janusz",
                             LastName = "Kowalski",
-                            DocumentsNumber = "ABC123456"
+                            DocumentsNumber = _dataProtector.Protect("ABC123456")
                         }
                     }
                 },
@@ -183,13 +193,13 @@ namespace BankAPI.Services
                         [
                             new DebitCard()
                             {
-                                CardNumber = "1234567887654321",
+                                CardNumber = _dataProtector.Protect("1234567887654321"),
                                 AccountId = 2
                             },
                             new DebitCard()
                             {
                                 AccountId = 2,
-                                CardNumber = "7890098778900987"
+                                CardNumber = _dataProtector.Protect("7890098778900987")
                             }
                         ],
                         Document = new()
@@ -198,7 +208,7 @@ namespace BankAPI.Services
                             FirstName = "Jan",
                             LastName = "Nowak",
                             AccountId = 2,
-                            DocumentsNumber = "DEF234098"
+                            DocumentsNumber = _dataProtector.Protect("DEF234098")
                         }
                     }
                 },
@@ -539,6 +549,7 @@ namespace BankAPI.Services
                         }
                     }
                 });
+            _apiContext.SaveChanges();
         }
     }
 }
