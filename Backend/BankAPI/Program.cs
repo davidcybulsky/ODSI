@@ -63,7 +63,7 @@ services.AddAuthentication()
     {
         options.LoginPath = "/auth/login";
         options.Cookie.HttpOnly = true;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.None;
     });
 
 //Authorization

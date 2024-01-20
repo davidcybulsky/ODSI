@@ -10,10 +10,10 @@ public static class ErrorHandlingMiddleware
             {
                 await next.Invoke(context);
             }
-            catch (BadRequestException)
+            catch (BadRequestException ex)
             {
                 context.Response.StatusCode = 400;
-                await context.Response.WriteAsync("Bad request");
+                await context.Response.WriteAsync(ex.Message);
             }
             catch (UnauthorizedException)
             {

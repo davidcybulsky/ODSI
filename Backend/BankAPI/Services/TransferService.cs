@@ -143,21 +143,21 @@ namespace BankAPI.Services
                 .Include(x => x.Account)
                 .ThenInclude(x => x.Transfers)
                 .FirstOrDefaultAsync(x => x.Account.AccountNumber == makePaymentDto.ReceiversAccountNumber)
-                    ?? throw new BadRequestException();
+                    ?? throw new BadRequestException("Bad account number");
 
             if (issuer.Account.AccountNumber == receiver.Account.AccountNumber)
             {
-                throw new BadRequestException();
+                throw new BadRequestException("Bad account number");
             }
 
             if (makePaymentDto.AmountOfMoney <= 0)
             {
-                throw new BadRequestException();
+                throw new BadRequestException("Too little money on your account");
             }
 
             if (issuer.Account.AmountOfMoney - makePaymentDto.AmountOfMoney < 0)
             {
-                throw new BadRequestException();
+                throw new BadRequestException("Too little money on your account");
             }
 
             Transfer transfer = new()
