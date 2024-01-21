@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace BankAPI.Controllers
 {
     [ApiController]
-    [Route("transfer")]
+    [Route("api/transfer")]
     public class TransferController : ControllerBase
     {
         private readonly ITransferService _service;

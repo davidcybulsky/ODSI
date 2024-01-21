@@ -1,0 +1,8 @@
+<app-links></app-links>
+<div class="col-50-inline">
+    <h3 class="central">Cards</h3>
+    <div *ngFor="let card of debitCards">
+        <p [ngClass]="this.isCardVisable ? '' : 'hidden'">Number of the card: {{card.cardNumber}}</p>
+    </div>
+    <button (click)="onChangeVisablilityCard()">{{this.isCardVisable ? "Hide" : "Show"}}</button>
+</div>

@@ -2,15 +2,17 @@ import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MaskModel } from '../../models/mask.model';
-import { CommonModule } from '@angular/common';
+import { AsyncPipe, CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { Subject } from 'rxjs';
 
 @Component({
   selector: 'app-mask',
   standalone: true,
   imports: [
     CommonModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    AsyncPipe
   ],
   templateUrl: './mask.component.html',
   styleUrl: './mask.component.css'
@@ -19,12 +21,12 @@ export class MaskComponent implements  OnInit {
 
   maskForm! : FormGroup;
   mask: MaskModel | undefined;
+  error : Subject<string|undefined> = new Subject()
+  error$ = this.error.asObservable()
 
   constructor(private authService: AuthService,
               private formBuilder: FormBuilder,
-              private router: Router) {
-
-  }
+              private router: Router) { }
   
   ngOnInit(): void {
     this.initForm()
@@ -43,6 +45,9 @@ export class MaskComponent implements  OnInit {
     this.authService.login(this.maskForm.value).subscribe(
       response => {
         this.router.navigateByUrl("/account")
+      },
+      error => {
+        this.error.next(error.error)
       }
     )
   }

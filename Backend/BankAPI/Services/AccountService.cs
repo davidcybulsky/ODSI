@@ -27,15 +27,6 @@ namespace BankAPI.Services
 
         public async Task ChangePasswordAsync(ChangePasswordDto changePasswordDto)
         {
-            if (changePasswordDto.NewPassword != changePasswordDto.ConfirmedPassword)
-            {
-                throw new BadRequestException("Passwords are diffferent");
-            }
-
-            if (changePasswordDto.NewPassword.Length < 12)
-            {
-                throw new BadRequestException("New password does not fullfil security requiements");
-            }
 
             string sId = await _httpContextService.GetSessionId();
 
@@ -60,6 +51,11 @@ namespace BankAPI.Services
                 }
             }
 
+            if(changePasswordDto.NewPassword == string.Empty || changePasswordDto.ConfirmedPassword == string.Empty || changePasswordDto.CurrentPassword == string.Empty) 
+            {
+                throw new BadRequestException("All fields are required");
+            }
+
             User user = await _dbContext.Users
                 .Include(x => x.SessionTokens)
                 .Include(x => x.Account)
@@ -71,6 +67,46 @@ namespace BankAPI.Services
             if (result == false)
             {
                 throw new BadRequestException("Bad password");
+            }
+
+
+            if (changePasswordDto.NewPassword != changePasswordDto.ConfirmedPassword)
+            {
+                throw new BadRequestException("Passwords are diffferent");
+            }
+
+            if (changePasswordDto.NewPassword.Length < 12)
+            {
+                throw new BadRequestException("New password is too short");
+            }
+
+            int L = changePasswordDto.NewPassword.Length;
+            int R = 0;
+            if (changePasswordDto.NewPassword.Any(x => char.IsUpper(x)))
+            {
+                R += 26;
+            }
+            if (changePasswordDto.NewPassword.Any(x => char.IsLower(x)))
+            {
+                R += 26;
+            }
+            if (changePasswordDto.NewPassword.Any(x => char.IsNumber(x)))
+            {
+                R += 10;
+            }
+
+            string withoutSpecial = new(changePasswordDto.NewPassword.Where(c => Char.IsLetterOrDigit(c)).ToArray());
+
+            if (withoutSpecial != changePasswordDto.NewPassword)
+            {
+                R += 30;
+            }
+
+            double Entropy = Math.Log2(Math.Pow(R, L));
+
+            if (Entropy < 60)
+            {
+                throw new BadRequestException($"Your password is too weak");
             }
 
             string hashedPassword = BCrypt.Net.BCrypt.HashPassword(changePasswordDto.NewPassword);

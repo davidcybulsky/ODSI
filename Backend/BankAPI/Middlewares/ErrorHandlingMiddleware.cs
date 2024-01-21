@@ -10,10 +10,10 @@ public static class ErrorHandlingMiddleware
             {
                 await next.Invoke(context);
             }
-            catch (BadRequestException)
+            catch (BadRequestException ex)
             {
                 context.Response.StatusCode = 400;
-                await context.Response.WriteAsync("Bad request");
+                await context.Response.WriteAsync(ex.Message);
             }
             catch (UnauthorizedException)
             {
@@ -30,10 +30,11 @@ public static class ErrorHandlingMiddleware
                 context.Response.StatusCode = 404;
                 await context.Response.WriteAsync("Not found");
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 context.Response.StatusCode = 500;
-                await context.Response.WriteAsync("Something went wrong");
+                Console.WriteLine(e.Message);
+                await context.Response.WriteAsync("Internal server error");
             }
         });
         return applicationBuilder;

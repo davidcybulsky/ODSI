@@ -5,6 +5,7 @@ using BankAPI.Exceptions;
 using BankAPI.Interfaces;
 using BankAPI.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
@@ -15,14 +16,18 @@ namespace BankAPI.Services
         private readonly ApiContext _dbContext;
         private readonly IHttpContextService _httpContextService;
         private readonly IMapper _mapper;
+        private readonly IDataProtector _dataProtector;
 
         public DebitCardService(ApiContext dbContext,
             IHttpContextService httpContextService,
-            IMapper mapper)
+            IMapper mapper,
+            IDataProtectionProvider dataProtectionProvider,
+            IConfiguration configuration)
         {
             _dbContext = dbContext;
             _httpContextService = httpContextService;
             _mapper = mapper;
+            _dataProtector = dataProtectionProvider.CreateProtector(configuration["DataProtector:SymmetricKey"]);
         }
 
         public async Task<IEnumerable<DebitCardDto>> GetDebitCards()
@@ -58,6 +63,11 @@ namespace BankAPI.Services
                         Any(s => s.Token == sId)) ?? throw new UnauthorizedException();
 
             IEnumerable<DebitCardDto> debitCards = _mapper.Map<IEnumerable<DebitCardDto>>(user.Account.DebitCards);
+
+            foreach (DebitCardDto debitCard in debitCards)
+            {
+                debitCard.CardNumber = _dataProtector.Unprotect(debitCard.CardNumber);
+            }
 
             SessionToken token = _dbContext.SessionTokens.FirstOrDefault(x => x.Token == sId)!;
 

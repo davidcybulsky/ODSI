@@ -13,6 +13,14 @@ const routes: Routes = [
   {
     path: 'details',
     loadComponent: () => import('./account-details/account-details.component').then(c => c.AccountDetailsComponent)
+  },
+  {
+    path: 'document',
+    loadComponent: () => import('./document/document.component').then(c => c.DocumentComponent)
+  },
+  {
+    path: 'cards',
+    loadComponent: () => import('./cards/cards.component').then(c => c.CardsComponent)
   }
 ];
 

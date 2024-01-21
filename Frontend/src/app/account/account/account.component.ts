@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { LinksComponent } from '../../links/links.component';
 import { AccountService } from '../../services/account.service';
 import { AccountModel } from '../../models/account.model';
-import { Observable } from 'rxjs';
+import { Observable, take } from 'rxjs';
 
 @Component({
   selector: 'app-account',
@@ -15,12 +15,15 @@ import { Observable } from 'rxjs';
 })
 export class AccountComponent implements OnInit {
 
-  accountModel : Observable<AccountModel> | undefined
+  accountModel : AccountModel | undefined
 
   constructor(private accountService: AccountService) {}
 
   ngOnInit() {
-    this.accountModel = this.accountService.getAccount()
+    this.accountService.getAccount().pipe(take(1))
+    .subscribe(response => {
+        this.accountModel = response
+      })
   }
 
 }

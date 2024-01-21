@@ -17,4 +17,6 @@
     </div>
     <button type="submit">Create</button>
     <button (click)="onCancel()">Cancel</button>
+    <br>
+    <p>{{this.error$|async}}</p>
 </form>

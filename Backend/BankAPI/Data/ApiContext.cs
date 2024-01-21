@@ -1,9 +1,10 @@
 using BankAPI.Data.Entities;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace BankAPI.Data
 {
-    public class ApiContext : DbContext
+    public class ApiContext : DbContext, IDataProtectionKeyContext
     {
         public DbSet<Account> Accounts { get; set; }
 
@@ -18,6 +19,8 @@ namespace BankAPI.Data
         public DbSet<SessionToken> SessionTokens { get; set; }
 
         public DbSet<Transfer> Transfers { get; set; }
+
+        public DbSet<DataProtectionKey> DataProtectionKeys { get; set; }
 
         public ApiContext(DbContextOptions<ApiContext> options) : base(options) { }
 
