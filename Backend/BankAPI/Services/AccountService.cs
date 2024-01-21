@@ -51,6 +51,11 @@ namespace BankAPI.Services
                 }
             }
 
+            if(changePasswordDto.NewPassword == string.Empty || changePasswordDto.ConfirmedPassword == string.Empty || changePasswordDto.CurrentPassword == string.Empty) 
+            {
+                throw new BadRequestException("All fields are required");
+            }
+
             User user = await _dbContext.Users
                 .Include(x => x.SessionTokens)
                 .Include(x => x.Account)

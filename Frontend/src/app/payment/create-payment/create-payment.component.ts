@@ -3,6 +3,8 @@ import { PaymentService } from '../../services/payment.service';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LinksComponent } from '../../links/links.component';
+import { Subject } from 'rxjs';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'app-create-payment',
@@ -10,7 +12,8 @@ import { LinksComponent } from '../../links/links.component';
   imports: [
     LinksComponent,
     FormsModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    AsyncPipe
   ],
   templateUrl: './create-payment.component.html',
   styleUrl: './create-payment.component.css'
@@ -18,6 +21,8 @@ import { LinksComponent } from '../../links/links.component';
 export class CreatePaymentComponent implements OnInit {
 
   paymentForm! : FormGroup;
+  error : Subject<string|undefined> = new Subject()
+  error$ = this.error.asObservable()
 
   constructor(private paymentService: PaymentService,
               private formBuilder: FormBuilder,
@@ -36,6 +41,9 @@ export class CreatePaymentComponent implements OnInit {
     this.paymentService.createPayment(this.paymentForm.value).subscribe(
       success => {
         this.router.navigateByUrl("/account")
+      },
+      error => {
+        this.error.next(error.error)
       }
     )
   }

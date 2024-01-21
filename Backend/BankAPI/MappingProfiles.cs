@@ -11,6 +11,7 @@ namespace BankAPI
             CreateMap<DebitCard, DebitCardDto>();
             CreateMap<Transfer, TransferDto>();
             CreateMap<Document, DocumentDto>();
+            CreateMap<Account, AccountDto>();
         }
     }
 }

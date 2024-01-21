@@ -132,6 +132,11 @@ namespace BankAPI.Services
                 }
             }
 
+            if(makePaymentDto.Title == string.Empty || makePaymentDto.ReceiversAccountNumber == string.Empty || makePaymentDto.AmountOfMoney == 0) 
+            {
+                throw new BadRequestException("All fields are requiered");
+            }
+
             User issuer = await _dbContext.Users
                 .Include(x => x.SessionTokens)
                 .Include(x => x.Account)

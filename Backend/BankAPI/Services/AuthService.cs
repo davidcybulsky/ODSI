@@ -104,7 +104,7 @@ namespace BankAPI.Services
 
             if (user.CurrentTriesAmmount > 3)
             {
-                throw new ForbiddenException();
+                throw new BadRequestException("The account is blocked");
             }
 
             string partialPasswordHash = user.PartialPasswords.FirstOrDefault(x => x.Id == user.CurrentPartialPassword)!.Hash;
