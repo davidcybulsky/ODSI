@@ -15,7 +15,19 @@ services:
     ports:
       - 4200:443
     networks:
-      - dev     
+      - dev   
+    restart: 
+      on-failure
+
+#  proxy:
+ #   depends_on:
+#      - bankapi
+ #     - web
+  #  build:
+   #   context: ./Proxy  
+    #  dockerfile: Dockerfile
+#    ports:
+ #     - "443:443"
 
   bankapi:
     depends_on: 
@@ -36,6 +48,8 @@ services:
     volumes:
       - ${APPDATA}\microsoft\UserSecrets\:/root/.microsoft/usersecrets
       - ${USERPROFILE}\.aspnet\https:/root/.aspnet/https/
+    restart:
+      on-failure
 
   postgres:
     image: postgres:latest
@@ -49,6 +63,8 @@ services:
       - app_data:/var/lib/postgresql/data
     networks:
       - dev
+    restart:
+      on-failure
     
 volumes:
   app_data:

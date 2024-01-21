@@ -61,9 +61,9 @@ services.AddHttpContextAccessor();
 services.AddAuthentication()
     .AddCookie(options =>
     {
-        options.LoginPath = "/auth/login";
+        options.LoginPath = "/api/auth/login";
         options.Cookie.HttpOnly = true;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.None;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     });
 
 //Authorization

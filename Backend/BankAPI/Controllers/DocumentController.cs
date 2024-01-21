@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace BankAPI.Controllers;
 
 [ApiController]
-[Route("document")]
+[Route("api/document")]
 public class DocumentController : ControllerBase
 {
     private readonly IDocumentService _service;

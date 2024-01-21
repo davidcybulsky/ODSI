@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace BankAPI.Controllers
 {
     [ApiController]
-    [Route("card")]
+    [Route("api/card")]
     public class DebitCardController : ControllerBase
     {
         private readonly IDebitCardService _service;
