@@ -19,15 +19,17 @@ services:
     restart: 
       on-failure
 
-#  proxy:
- #   depends_on:
-#      - bankapi
- #     - web
-  #  build:
-   #   context: ./Proxy  
-    #  dockerfile: Dockerfile
-#    ports:
- #     - "443:443"
+  proxy:
+    depends_on:
+      - bankapi
+      - web
+    build:
+      context: ./Proxy  
+      dockerfile: Dockerfile
+    ports:
+      - "443:443"
+    networks:
+      - dev
 
   bankapi:
     depends_on: 
