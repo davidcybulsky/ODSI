@@ -13,22 +13,10 @@ import { take } from 'rxjs';
 })
 export class AppComponent implements OnInit {
   
-  constructor(private authService: AuthService,
-              private router: Router) {}
+  constructor(private router: Router) {}
 
   ngOnInit(): void {
-    this.authService.iSAuthenticated().pipe(take(1)).subscribe(
-      success => {
-        if(success === true) {
-          this.router.navigateByUrl("/account")
-        }
-        else {
-          this.router.navigateByUrl("/auth/login")
-        }
-      },
-      error => {
-        this.router.navigateByUrl("/auth/login")
-      })
+    this.router.navigateByUrl("/auth/login")
   }
   
   title = 'Frontend';

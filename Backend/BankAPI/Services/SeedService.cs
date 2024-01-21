@@ -292,7 +292,7 @@ namespace BankAPI.Services
                             AccountId = 3,
                             FirstName = "Paweł",
                             LastName = "Nowak",
-                            DocumentsNumber = "LDZ214365"
+                            DocumentsNumber = _dataProtector.Protect("LDZ214365")
                         }
                     }
                 },
@@ -377,7 +377,7 @@ namespace BankAPI.Services
                             FirstName = "Władyslaw",
                             LastName = "Zając",
                             AccountId = 4,
-                            DocumentsNumber = "WRE341209"
+                            DocumentsNumber = _dataProtector.Protect("WRE341209")
                         }
                     }
                 },
@@ -461,7 +461,7 @@ namespace BankAPI.Services
                             FirstName = "Tomasz",
                             LastName = "Bąk",
                             AccountId = 5,
-                            DocumentsNumber = "AZA903856"
+                            DocumentsNumber = _dataProtector.Protect("AZA903856")
                         }
                     }
                 },
@@ -545,7 +545,7 @@ namespace BankAPI.Services
                             FirstName = "Adam",
                             LastName = "Polak",
                             AccountId = 6,
-                            DocumentsNumber = "BRO221103"
+                            DocumentsNumber = _dataProtector.Protect("BRO221103")
                         }
                     }
                 });

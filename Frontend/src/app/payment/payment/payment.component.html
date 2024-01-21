@@ -2,7 +2,7 @@
 <div *ngFor="let payment of payments" class="transfer">
     <p>Title: {{payment.title}}</p>
     <p [ngStyle]="{'color': payment.amountOfMoney < 0 ? '#F00' : '#0F0'}">Amount of money: {{payment.amountOfMoney}}</p>
-    <p>{{payment.issuersAccountNumber}} => {{payment.receiversAccountNumber}}</p>
-    <p>{{payment.balanceBefore}}</p>
-    <p>{{payment.balanceAfter}}</p>
+    <p>Transfer: {{payment.issuersAccountNumber}} => {{payment.receiversAccountNumber}}</p>
+    <p>Balance before: {{payment.balanceBefore}}</p>
+    <p>Balance after: {{payment.balanceAfter}}</p>
 </div>
