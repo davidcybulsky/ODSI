@@ -4,54 +4,36 @@ using BankAPI.Data.Entities;
 using BankAPI.Exceptions;
 using BankAPI.Interfaces;
 using BankAPI.Models;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace BankAPI.Services
 {
     public class AccountService : IAccountService
     {
         private readonly ApiContext _dbContext;
-        private readonly IHttpContextService _httpContextService;
         private readonly IMapper _mapper;
+        private readonly ISessionService _sessionService;
 
-        public AccountService(ApiContext dbContext,
-            IHttpContextService httpContextService,
-            IMapper mapper)
+        public AccountService(
+            ApiContext dbContext,
+            IMapper mapper,
+            ISessionService sessionService)
         {
             _dbContext = dbContext;
-            _httpContextService = httpContextService;
             _mapper = mapper;
+            _sessionService = sessionService;
         }
 
         public async Task ChangePasswordAsync(ChangePasswordDto changePasswordDto)
         {
 
-            string sId = await _httpContextService.GetSessionId();
+            string sId = await _sessionService.GetSessionId();
 
-            SessionToken sessionInDb = await _dbContext.SessionTokens.FirstOrDefaultAsync(x => x.Token == sId) ?? throw new UnauthorizedException();
+            string csrf = await _sessionService.GetCsrf();
 
-            if (sessionInDb.ExpirationDate < DateTime.UtcNow)
-            {
-                throw new UnauthorizedException();
-            }
+            await _sessionService.Verify(sId, csrf);
 
-            string csrf = await _httpContextService.GetCsrfTokenAsync();
-
-            if (csrf is null)
-            {
-                throw new UnauthorizedException();
-            }
-            else
-            {
-                if (csrf != sessionInDb.CsrfToken)
-                {
-                    throw new UnauthorizedException();
-                }
-            }
-
-            if(changePasswordDto.NewPassword == string.Empty || changePasswordDto.ConfirmedPassword == string.Empty || changePasswordDto.CurrentPassword == string.Empty) 
+            if (changePasswordDto.NewPassword == string.Empty || changePasswordDto.ConfirmedPassword == string.Empty || changePasswordDto.CurrentPassword == string.Empty)
             {
                 throw new BadRequestException("All fields are required");
             }
@@ -69,7 +51,6 @@ namespace BankAPI.Services
                 throw new BadRequestException("Bad password");
             }
 
-
             if (changePasswordDto.NewPassword != changePasswordDto.ConfirmedPassword)
             {
                 throw new BadRequestException("Passwords are diffferent");
@@ -80,31 +61,9 @@ namespace BankAPI.Services
                 throw new BadRequestException("New password is too short");
             }
 
-            int L = changePasswordDto.NewPassword.Length;
-            int R = 0;
-            if (changePasswordDto.NewPassword.Any(x => char.IsUpper(x)))
-            {
-                R += 26;
-            }
-            if (changePasswordDto.NewPassword.Any(x => char.IsLower(x)))
-            {
-                R += 26;
-            }
-            if (changePasswordDto.NewPassword.Any(x => char.IsNumber(x)))
-            {
-                R += 10;
-            }
+            double entropy = CountEntropy(changePasswordDto.NewPassword);
 
-            string withoutSpecial = new(changePasswordDto.NewPassword.Where(c => Char.IsLetterOrDigit(c)).ToArray());
-
-            if (withoutSpecial != changePasswordDto.NewPassword)
-            {
-                R += 30;
-            }
-
-            double Entropy = Math.Log2(Math.Pow(R, L));
-
-            if (Entropy < 60)
+            if (entropy < 60)
             {
                 throw new BadRequestException($"Your password is too weak");
             }
@@ -143,57 +102,16 @@ namespace BankAPI.Services
                 });
             }
 
-            SessionToken token = _dbContext.SessionTokens.FirstOrDefault(x => x.Token == sId)!;
-
-            token.ExpirationDate = DateTime.UtcNow;
-
-            string sessionId = Guid.NewGuid().ToString();
-
-            user.SessionTokens.Add(new SessionToken
-            {
-                Token = sessionId,
-                CsrfToken = csrf,
-                ExpirationDate = DateTime.UtcNow.AddMinutes(5)
-            });
-
-            await _dbContext.SaveChangesAsync();
-
-            ClaimsPrincipal claimsPrincipal = new(
-                new ClaimsIdentity(
-                    new Claim[]
-                    {
-                        new(ClaimTypes.NameIdentifier, sessionId)
-                    },
-                    CookieAuthenticationDefaults.AuthenticationScheme
-                ));
-
-            await _httpContextService.AuthenticateUsingCookie(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal);
+            await _sessionService.Expire(sId);
         }
 
         public async Task<AccountDto> GetAccountInfoAsync()
         {
-            string sId = await _httpContextService.GetSessionId();
+            string sId = await _sessionService.GetSessionId();
 
-            SessionToken sessionInDb = await _dbContext.SessionTokens.FirstOrDefaultAsync(x => x.Token == sId) ?? throw new UnauthorizedException();
+            string csrf = await _sessionService.GetCsrf();
 
-            if (sessionInDb.ExpirationDate < DateTime.UtcNow)
-            {
-                throw new UnauthorizedException();
-            }
-
-            string csrf = await _httpContextService.GetCsrfTokenAsync();
-
-            if (csrf is null)
-            {
-                throw new UnauthorizedException();
-            }
-            else
-            {
-                if (csrf != sessionInDb.CsrfToken)
-                {
-                    throw new UnauthorizedException();
-                }
-            }
+            await _sessionService.Verify(sId, csrf);
 
             User user = _dbContext.Users
                 .Include(x => x.SessionTokens)
@@ -203,33 +121,41 @@ namespace BankAPI.Services
 
             AccountDto account = _mapper.Map<AccountDto>(user.Account);
 
-            SessionToken token = _dbContext.SessionTokens.FirstOrDefault(x => x.Token == sId)!;
+            await _sessionService.Expire(sId);
 
-            token.ExpirationDate = DateTime.UtcNow;
-
-            string sessionId = Guid.NewGuid().ToString();
-
-            user.SessionTokens.Add(new SessionToken
-            {
-                Token = sessionId,
-                CsrfToken = csrf,
-                ExpirationDate = DateTime.UtcNow.AddMinutes(5)
-            });
-
-            await _dbContext.SaveChangesAsync();
-
-            ClaimsPrincipal claimsPrincipal = new(
-                new ClaimsIdentity(
-                    new Claim[]
-                    {
-                        new(ClaimTypes.NameIdentifier, sessionId)
-                    },
-                    CookieAuthenticationDefaults.AuthenticationScheme
-                ));
-
-            await _httpContextService.AuthenticateUsingCookie(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal);
+            await _sessionService.Create(user, csrf);
 
             return account;
+        }
+
+        private double CountEntropy(string password)
+        {
+
+            int L = password.Length;
+            int R = 0;
+            if (password.Any(x => char.IsUpper(x)))
+            {
+                R += 26;
+            }
+            if (password.Any(x => char.IsLower(x)))
+            {
+                R += 26;
+            }
+            if (password.Any(x => char.IsNumber(x)))
+            {
+                R += 10;
+            }
+
+            string withoutSpecial = new(password.Where(c => Char.IsLetterOrDigit(c)).ToArray());
+
+            if (withoutSpecial != password)
+            {
+                R += 30;
+            }
+
+            double entropy = Math.Log2(Math.Pow(R, L));
+
+            return entropy;
         }
     }
 }

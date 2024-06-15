@@ -3,22 +3,21 @@ using BankAPI.Data.Entities;
 using BankAPI.Exceptions;
 using BankAPI.Interfaces;
 using BankAPI.Models;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace BankAPI.Services
 {
     public class AuthService : IAuthService
     {
         private readonly ApiContext _dbContext;
-        private readonly IHttpContextService _httpContextService;
+        private readonly ISessionService _sessionService;
 
-        public AuthService(ApiContext dbContext,
-                           IHttpContextService httpContextService)
+        public AuthService(
+            ApiContext dbContext,
+            ISessionService sessionService)
         {
             _dbContext = dbContext;
-            _httpContextService = httpContextService;
+            _sessionService = sessionService;
         }
 
         public async Task<MaskInfoDto> GetMask(GetMaskDto getMaskDto)
@@ -68,7 +67,7 @@ namespace BankAPI.Services
 
         public async Task<CsrfDto> IsAuthenticatedAsync()
         {
-            string sId = await _httpContextService.GetSessionId();
+            string sId = await _sessionService.GetSessionId();
 
             User user = await _dbContext.Users.Include(x => x.SessionTokens).FirstOrDefaultAsync(x => x.SessionTokens.Any(x => x.Token == sId)) ?? throw new UnauthorizedException();
 
@@ -118,31 +117,11 @@ namespace BankAPI.Services
                 throw new BadRequestException("Bad login or password");
             }
 
-            string sessionId = Guid.NewGuid().ToString();
-
             string csrf = Guid.NewGuid().ToString();
-
-            user.SessionTokens.Add(new SessionToken
-            {
-                CsrfToken = csrf,
-                Token = sessionId,
-                ExpirationDate = DateTime.UtcNow.AddMinutes(5)
-            });
 
             user.CurrentTriesAmmount = 0;
 
-            await _dbContext.SaveChangesAsync();
-
-            ClaimsPrincipal claimsPrincipal = new(
-                new ClaimsIdentity(
-                    new Claim[]
-                    {
-                        new(ClaimTypes.NameIdentifier, sessionId)
-                    },
-                    CookieAuthenticationDefaults.AuthenticationScheme
-                ));
-
-            await _httpContextService.AuthenticateUsingCookie(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal);
+            await _sessionService.Create(user, csrf);
 
             return (new CsrfDto()
             {
@@ -152,14 +131,11 @@ namespace BankAPI.Services
 
         public async Task LogoutAsync()
         {
-            string sId = await _httpContextService.GetSessionId();
+            string sId = await _sessionService.GetSessionId();
 
-            SessionToken token = _dbContext.SessionTokens.FirstOrDefault(x => x.Token == sId);
+            SessionToken token = await _dbContext.SessionTokens.FirstOrDefaultAsync(x => x.Token == sId)!;
 
-
-            string csrf = await _httpContextService.GetCsrfTokenAsync();
-
-
+            string csrf = await _sessionService.GetCsrf();
 
             if (token != null)
             {
@@ -177,14 +153,12 @@ namespace BankAPI.Services
 
                 if (token.ExpirationDate < DateTime.UtcNow)
                 {
-                    await _httpContextService.LogoutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    await _sessionService.Logout();
                 }
-
-                token.ExpirationDate = DateTime.UtcNow;
-                await _dbContext.SaveChangesAsync();
+                await _sessionService.Expire(sId);
             }
 
-            await _httpContextService.LogoutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            await _sessionService.Logout();
         }
 
         public async Task SignUpAsync(SignUpDto signUpDto)

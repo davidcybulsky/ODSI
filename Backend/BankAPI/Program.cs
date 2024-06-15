@@ -26,6 +26,7 @@ services.AddScoped<IDebitCardService, DebitCardService>();
 services.AddScoped<IHttpContextService, HttpContextService>();
 services.AddScoped<ITransferService, TransferService>();
 services.AddScoped<IDocumentService, DocumentService>();
+services.AddScoped<ISessionService, SessionService>();
 services.AddScoped<SeedService>();
 
 //DbContext
