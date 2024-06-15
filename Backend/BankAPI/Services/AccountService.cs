@@ -33,10 +33,7 @@ namespace BankAPI.Services
 
             await _sessionService.Verify(sId, csrf);
 
-            if (changePasswordDto.NewPassword == string.Empty || changePasswordDto.ConfirmedPassword == string.Empty || changePasswordDto.CurrentPassword == string.Empty)
-            {
-                throw new BadRequestException("All fields are required");
-            }
+            ValidateNewPassword(changePasswordDto);
 
             User user = await _dbContext.Users
                 .Include(x => x.SessionTokens)
@@ -49,16 +46,6 @@ namespace BankAPI.Services
             if (result == false)
             {
                 throw new BadRequestException("Bad password");
-            }
-
-            if (changePasswordDto.NewPassword != changePasswordDto.ConfirmedPassword)
-            {
-                throw new BadRequestException("Passwords are diffferent");
-            }
-
-            if (changePasswordDto.NewPassword.Length < 12)
-            {
-                throw new BadRequestException("New password is too short");
             }
 
             double entropy = CountEntropy(changePasswordDto.NewPassword);
@@ -156,6 +143,24 @@ namespace BankAPI.Services
             double entropy = Math.Log2(Math.Pow(R, L));
 
             return entropy;
+        }
+
+        private void ValidateNewPassword(ChangePasswordDto changePasswordDto)
+        {
+            if (changePasswordDto.NewPassword == string.Empty || changePasswordDto.ConfirmedPassword == string.Empty || changePasswordDto.CurrentPassword == string.Empty)
+            {
+                throw new BadRequestException("All fields are required");
+            }
+
+            if (changePasswordDto.NewPassword != changePasswordDto.ConfirmedPassword)
+            {
+                throw new BadRequestException("Passwords are diffferent");
+            }
+
+            if (changePasswordDto.NewPassword.Length < 12)
+            {
+                throw new BadRequestException("New password is too short");
+            }
         }
     }
 }

@@ -94,20 +94,7 @@ namespace BankAPI.Services
                 .FirstOrDefaultAsync(x => x.Account.AccountNumber == makePaymentDto.ReceiversAccountNumber)
                     ?? throw new BadRequestException("Bad account number");
 
-            if (issuer.Account.AccountNumber == receiver.Account.AccountNumber)
-            {
-                throw new BadRequestException("Bad account number");
-            }
-
-            if (makePaymentDto.AmountOfMoney <= 0)
-            {
-                throw new BadRequestException("Too little money on your account");
-            }
-
-            if (issuer.Account.AmountOfMoney - makePaymentDto.AmountOfMoney < 0)
-            {
-                throw new BadRequestException("Too little money on your account");
-            }
+            VerifyTransferPossibility(issuer, receiver, makePaymentDto);
 
             Transfer transfer = new()
             {
@@ -132,6 +119,24 @@ namespace BankAPI.Services
             await _sessionService.Expire(sId);
 
             await _sessionService.Create(issuer, csrf);
+        }
+
+        private void VerifyTransferPossibility(User issuer, User receiver, MakeTransferDto makePaymentDto)
+        {
+            if (issuer.Account.AccountNumber == receiver.Account.AccountNumber)
+            {
+                throw new BadRequestException("Bad account number");
+            }
+
+            if (makePaymentDto.AmountOfMoney <= 0)
+            {
+                throw new BadRequestException("Too little money on your account");
+            }
+
+            if (issuer.Account.AmountOfMoney - makePaymentDto.AmountOfMoney < 0)
+            {
+                throw new BadRequestException("Too little money on your account");
+            }
         }
     }
 }
