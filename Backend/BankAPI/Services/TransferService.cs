@@ -4,51 +4,32 @@ using BankAPI.Data.Entities;
 using BankAPI.Exceptions;
 using BankAPI.Interfaces;
 using BankAPI.Models;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace BankAPI.Services
 {
     public class TransferService : ITransferService
     {
         private readonly ApiContext _dbContext;
-        private readonly IHttpContextService _httpContextService;
+        private readonly ISessionService _sessionService;
         private readonly IMapper _mapper;
 
         public TransferService(ApiContext dbContext,
-            IHttpContextService httpContextService,
+            ISessionService sessionService,
             IMapper mapper)
         {
             _dbContext = dbContext;
-            _httpContextService = httpContextService;
+            _sessionService = sessionService;
             _mapper = mapper;
         }
 
         public async Task<IEnumerable<TransferDto>> GetPaymentHistoryAsync()
         {
-            string sId = await _httpContextService.GetSessionId();
+            string sId = await _sessionService.GetSessionId();
 
-            SessionToken sessionInDb = await _dbContext.SessionTokens.FirstOrDefaultAsync(x => x.Token == sId) ?? throw new UnauthorizedException();
+            string csrf = await _sessionService.GetCsrf();
 
-            if (sessionInDb.ExpirationDate < DateTime.UtcNow)
-            {
-                throw new UnauthorizedException();
-            }
-
-            string csrf = await _httpContextService.GetCsrfTokenAsync();
-
-            if (csrf is null)
-            {
-                throw new UnauthorizedException();
-            }
-            else
-            {
-                if (csrf != sessionInDb.CsrfToken)
-                {
-                    throw new UnauthorizedException();
-                }
-            }
+            await _sessionService.Verify(sId, csrf);
 
             User user = _dbContext.Users
                 .Include(x => x.SessionTokens)
@@ -80,59 +61,22 @@ namespace BankAPI.Services
                 transferDtos.Add(dto);
             }
 
-            sessionInDb.ExpirationDate = DateTime.UtcNow;
+            await _sessionService.Expire(sId);
 
-            string sessionId = Guid.NewGuid().ToString();
-
-            user.SessionTokens.Add(new SessionToken
-            {
-                Token = sessionId,
-                CsrfToken = csrf,
-                ExpirationDate = DateTime.UtcNow.AddMinutes(5)
-            });
-
-            await _dbContext.SaveChangesAsync();
-
-            ClaimsPrincipal claimsPrincipal = new(
-                new ClaimsIdentity(
-                    new Claim[]
-                    {
-                        new(ClaimTypes.NameIdentifier, sessionId)
-                    },
-                    CookieAuthenticationDefaults.AuthenticationScheme
-                ));
-
-            await _httpContextService.AuthenticateUsingCookie(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal);
+            await _sessionService.Create(user, csrf);
 
             return transferDtos;
         }
 
         public async Task MakePaymentAsync(MakeTransferDto makePaymentDto)
         {
-            string sId = await _httpContextService.GetSessionId();
+            string sId = await _sessionService.GetSessionId();
 
-            SessionToken sessionInDb = await _dbContext.SessionTokens.FirstOrDefaultAsync(x => x.Token == sId) ?? throw new UnauthorizedException();
+            string csrf = await _sessionService.GetCsrf();
 
-            if (sessionInDb.ExpirationDate < DateTime.UtcNow)
-            {
-                throw new UnauthorizedException();
-            }
+            await _sessionService.Verify(sId, csrf);
 
-            string csrf = await _httpContextService.GetCsrfTokenAsync();
-
-            if (csrf is null)
-            {
-                throw new UnauthorizedException();
-            }
-            else
-            {
-                if (csrf != sessionInDb.CsrfToken)
-                {
-                    throw new UnauthorizedException();
-                }
-            }
-
-            if(makePaymentDto.Title == string.Empty || makePaymentDto.ReceiversAccountNumber == string.Empty || makePaymentDto.AmountOfMoney == 0) 
+            if (makePaymentDto.Title == string.Empty || makePaymentDto.ReceiversAccountNumber == string.Empty || makePaymentDto.AmountOfMoney == 0)
             {
                 throw new BadRequestException("All fields are requiered");
             }
@@ -185,29 +129,9 @@ namespace BankAPI.Services
             transfer.ReceiversBalanceAfter = receiver.Account.AmountOfMoney;
             transfer.IssuersBalanceAfter = issuer.Account.AmountOfMoney;
 
-            sessionInDb.ExpirationDate = DateTime.UtcNow;
+            await _sessionService.Expire(sId);
 
-            string sessionId = Guid.NewGuid().ToString();
-
-            issuer.SessionTokens.Add(new SessionToken
-            {
-                Token = sessionId,
-                CsrfToken = csrf,
-                ExpirationDate = DateTime.UtcNow.AddMinutes(5)
-            });
-
-            await _dbContext.SaveChangesAsync();
-
-            ClaimsPrincipal claimsPrincipal = new(
-                new ClaimsIdentity(
-                    new Claim[]
-                    {
-                        new(ClaimTypes.NameIdentifier, sessionId)
-                    },
-                    CookieAuthenticationDefaults.AuthenticationScheme
-                ));
-
-            await _httpContextService.AuthenticateUsingCookie(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal);
+            await _sessionService.Create(issuer, csrf);
         }
     }
 }
