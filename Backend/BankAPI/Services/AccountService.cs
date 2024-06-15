@@ -109,26 +109,9 @@ namespace BankAPI.Services
         {
             string sId = await _sessionService.GetSessionId();
 
-            SessionToken sessionInDb = await _dbContext.SessionTokens.FirstOrDefaultAsync(x => x.Token == sId) ?? throw new UnauthorizedException();
-
-            if (sessionInDb.ExpirationDate < DateTime.UtcNow)
-            {
-                throw new UnauthorizedException();
-            }
-
             string csrf = await _sessionService.GetCsrf();
 
-            if (csrf is null)
-            {
-                throw new UnauthorizedException();
-            }
-            else
-            {
-                if (csrf != sessionInDb.CsrfToken)
-                {
-                    throw new UnauthorizedException();
-                }
-            }
+            await _sessionService.Verify(sId, csrf);
 
             User user = _dbContext.Users
                 .Include(x => x.SessionTokens)
